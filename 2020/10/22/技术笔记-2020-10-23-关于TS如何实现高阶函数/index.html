@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    
+    <title>
+        关于TS中如何处理高阶函数 | Ron0115
+    </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    
+        <link rel="shortcut icon" href="/favicon.ico">
+    
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <script id="hexo-configurations">
+    let CONFIG = {"hostname":"ron0115.github.io","root":"/","localsearch":{"enable":true,"trigger":"auto","unescape":false,"preload":false},"themeInfo":{"name":"ILS","version":"1.2.0","author":"XPoet","repository":"https://github.com/XPoet/hexo-theme-ils"},"codeblock":{"border_radius":null,"copy_button":{"enable":false,"show_result":false}},"path":"search.xml"};
+  </script>
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+
+<body>
+<div class="page-template">
+    <div class="page-top">
+        <header class="header-wrapper">
+
+    <div class="header-progress"></div>
+
+    <div class="header-content">
+
+        <a class="logo-title" href="/">
+            Ron0115
+        </a>
+
+        <ul class="menu-list">
+            
+                <li class="menu-item">
+                    <a class=""
+                       href="/"
+                    >
+                        首页
+                    </a>
+                </li>
+            
+                <li class="menu-item">
+                    <a class=""
+                       href="/archives"
+                    >
+                        归档
+                    </a>
+                </li>
+            
+                <li class="menu-item">
+                    <a class=""
+                       href="/about"
+                    >
+                        关于
+                    </a>
+                </li>
+            
+        </ul>
+
+        <div class="menu-bar">
+            <div class="menu-bar-middle"></div>
+        </div>
+    </div>
+
+    <div class="header-drawer">
+        <ul class="drawer-menu-list">
+            
+                <li class="drawer-menu-item">
+                    <a class=""
+                       href="/">首页</a>
+                </li>
+            
+                <li class="drawer-menu-item">
+                    <a class=""
+                       href="/archives">归档</a>
+                </li>
+            
+                <li class="drawer-menu-item">
+                    <a class=""
+                       href="/about">关于</a>
+                </li>
+            
+        </ul>
+    </div>
+
+    <div class="window-mask"></div>
+
+</header>
+
+
+    </div>
+
+    <div class="page-middle ">
+
+        <main class="main-content normal-code-theme">
+
+            <div class="main-content-left">
+                
+                    <div class="fade-in-down-animation">
+    <div class="article-content-container">
+
+        <div class="article-title">
+            <h3><a class="title-hover-animation">关于TS中如何处理高阶函数</a></h3>
+        </div>
+
+        <div class="meta-info">
+            <div class="article-meta-info">
+    <span class="article-date article-meta-item">
+        <i class="fa fa-calendar-o"></i> 2020-10-22 16:00:00
+    </span>
+    
+        <span class="article-categories article-meta-item">
+            <i class="fa fa-folder"></i>
+            <ul>
+                
+                    <li>
+                        <a href="/categories/FrontEnd/">FrontEnd</a>
+                    </li>
+                
+            </ul>
+        </span>
+    
+    
+        <span class="article-tags article-meta-item">
+            <i class="fa fa-tags"></i>
+            <ul>
+                
+                    <li>
+                        <a href="/tags/Javascript/">Javascript</a>
+                    </li>
+                
+                    <li>
+                        | <a href="/tags/React/">React</a>
+                    </li>
+                
+                    <li>
+                        | <a href="/tags/Typescript/">Typescript</a>
+                    </li>
+                
+                    <li>
+                        | <a href="/tags/%E6%B3%9B%E5%9E%8B/">泛型</a>
+                    </li>
+                
+                    <li>
+                        | <a href="/tags/Generics/">Generics</a>
+                    </li>
+                
+            </ul>
+        </span>
+    
+    
+        <span class="article-pv article-meta-item">
+            <i class="fa fa-eye"></i> <span id="busuanzi_value_page_pv"></span>
+        </span>
+    
+    
+    
+</div>
+
+        </div>
+
+        <div class="article-content markdown-body">
+            <h1 id="业务场景"><a href="#业务场景" class="headerlink" title="业务场景"></a>业务场景</h1><p>当我们封装一个 ajax 请求，其本质是异步 Promise 的调用。</p>
+<p>我们可以写一个高阶函数，在 Promise 的 executor 前展示 loading 提示，在请求结束后关闭 loading 提示。</p>
+<p>这样，我们会得到如下<code>requestLoadingWrapper</code>的实现。<br /></p>
+<h1 id="JS-实现"><a href="#JS-实现" class="headerlink" title="JS 实现"></a>JS 实现</h1><p>ajaxFunc（示例）</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> getUserInfo = <span class="keyword">async</span> () =&gt;</span><br><span class="line">  (<span class="keyword">await</span> request) &lt;</span><br><span class="line">  GetUserInfoType &gt;</span><br><span class="line">  <span class="string">`<span class="subst">$&#123;API_HGAME&#125;</span>/commission/cloud/getUserInfo`</span></span><br></pre></td></tr></table></figure>
+
+<p>requestLoadingWrapper</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">requestLoadingWrapper</span> (<span class="params">fn</span>) </span>&#123;</span><br><span class="line">  Toast.loading()</span><br><span class="line">  <span class="keyword">const</span>  res = <span class="keyword">await</span> fn()</span><br><span class="line">  Toast.hide()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>以上，看似很简单，但是如果我们对 TS 的基础不太熟悉或者不够深入的话，写起来还是无从下手的。这样，我们来重温下 TS 的一些基础</p>
+<h1 id="重拾-TS-基础"><a href="#重拾-TS-基础" class="headerlink" title="重拾 TS 基础"></a>重拾 TS 基础<br /></h1><h2 id="条件类型-extends-关键字"><a href="#条件类型-extends-关键字" class="headerlink" title="条件类型 - extends 关键字"></a>条件类型 - extends 关键字</h2><p>extends 用于条件判断中，其作用类似为 js 的 typeof 关键字。</p>
+<blockquote>
+<p>注意：extends 运用在 type 和 class 中时完全是两种作用的效果</p>
+</blockquote>
+<p>直接看例子</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> TypeName&lt;T&gt; = T <span class="keyword">extends</span> <span class="built_in">string</span></span><br><span class="line">  ? <span class="string">'string'</span></span><br><span class="line">  : T <span class="keyword">extends</span> <span class="built_in">number</span></span><br><span class="line">  ? <span class="string">'number'</span></span><br><span class="line">  : T <span class="keyword">extends</span> <span class="built_in">boolean</span></span><br><span class="line">  ? <span class="string">'boolean'</span></span><br><span class="line">  : T <span class="keyword">extends</span> <span class="literal">undefined</span></span><br><span class="line">  ? <span class="string">'undefined'</span></span><br><span class="line">  : T <span class="keyword">extends</span> <span class="built_in">Function</span></span><br><span class="line">  ? <span class="string">'function'</span></span><br><span class="line">  : <span class="string">'object'</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> T0 = TypeName&lt;<span class="built_in">string</span>&gt; <span class="comment">// "string"</span></span><br><span class="line"><span class="keyword">type</span> T1 = TypeName&lt;<span class="string">'a'</span>&gt; <span class="comment">// "string"</span></span><br><span class="line"><span class="keyword">type</span> T2 = TypeName&lt;<span class="literal">true</span>&gt; <span class="comment">// "boolean"</span></span><br><span class="line"><span class="keyword">type</span> T3 = TypeName&lt;<span class="function"><span class="params">()</span> =&gt;</span> <span class="built_in">void</span>&gt; <span class="comment">// "function"</span></span><br><span class="line"><span class="keyword">type</span> T4 = TypeName&lt;<span class="built_in">string</span>[]&gt; <span class="comment">// "object"</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="有趣的实现：PowerPartial"><a href="#有趣的实现：PowerPartial" class="headerlink" title="有趣的实现：PowerPartial"></a>有趣的实现：PowerPartial</h3><p>使用递归，将 object 每一层的参数都转化为可选。</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> PowerPartial&lt;T&gt; = &#123;</span><br><span class="line">  <span class="comment">// 如果是 object，则递归类型</span></span><br><span class="line">  [U <span class="keyword">in</span> keyof T]?: T[U] <span class="keyword">extends</span> object ? PowerPartial&lt;T[U]&gt; : T[U]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="infer-关键字"><a href="#infer-关键字" class="headerlink" title="infer 关键字"></a>infer 关键字</h2><p>用法：在条件类型语句中, 可以用  <code>infer</code>  声明一个类型变量并且对它进行使用。<br /></p>
+<ul>
+<li>这里顺便就可以重温下 TS 中<code>ReturnType</code>  的实现，</li>
+</ul>
+<blockquote>
+<p><code>ReturnType</code> ，意思是获取 Function 类型的返回值类型。</p>
+</blockquote>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> ReturnType&lt;T&gt; = T <span class="keyword">extends</span> (...args: <span class="built_in">any</span>[]) =&gt; infer R ? R : <span class="built_in">any</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>类似地， <code>Parameter</code>  的实现也大同小异</li>
+</ul>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// node_modules/typescript/lib/lib.es5.d.ts</span></span><br><span class="line"><span class="keyword">type</span> Parameters&lt;T <span class="keyword">extends</span> (...args: <span class="built_in">any</span>[]) =&gt; <span class="built_in">any</span>&gt; = T <span class="keyword">extends</span> (</span><br><span class="line">  ...args: infer P</span><br><span class="line">) =&gt; <span class="built_in">any</span></span><br><span class="line">  ? P</span><br><span class="line">  : never</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>还有 <code>ConstructorParameter</code> ,获取构造函数的参数</li>
+</ul>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// node_modules/typescript/lib/lib.es5.d.ts</span></span><br><span class="line"><span class="keyword">type</span> ConstructorParameters&lt;</span><br><span class="line">  T <span class="keyword">extends</span> <span class="keyword">new</span> (...args: <span class="built_in">any</span>[]) =&gt; <span class="built_in">any</span></span><br><span class="line">&gt; = T <span class="keyword">extends</span> <span class="keyword">new</span> (...args: infer P) =&gt; <span class="built_in">any</span> ? P : never</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>还有 <code>InstanceType</code> ，获取构造函数的实例类型</li>
+</ul>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// node_modules/typescript/lib/lib.es5.d.ts</span></span><br><span class="line"><span class="keyword">type</span> InstanceType&lt;T <span class="keyword">extends</span> <span class="keyword">new</span> (...args: <span class="built_in">any</span>[]) =&gt; <span class="built_in">any</span>&gt; = T <span class="keyword">extends</span> <span class="keyword">new</span> (</span><br><span class="line">  ...args: <span class="built_in">any</span>[]</span><br><span class="line">) =&gt; infer R</span><br><span class="line">  ? R</span><br><span class="line">  : <span class="built_in">any</span></span><br></pre></td></tr></table></figure>
+
+<h1 id="TS-实现"><a href="#TS-实现" class="headerlink" title="TS 实现"></a>TS 实现</h1><h2 id="获取-Promise-的返回值类型"><a href="#获取-Promise-的返回值类型" class="headerlink" title="获取 Promise 的返回值类型"></a>获取 Promise 的返回值类型</h2><p>利用条件类型和  <code>infer</code>  关键字，我们还可以方便地实现获取 Promise 对象的返回值类型</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Unpacked&lt;T&gt; = T <span class="keyword">extends</span> <span class="built_in">Promise</span>&lt;infer P&gt; ? P : T</span><br></pre></td></tr></table></figure>
+
+<h2 id="提取传入函数的参数和返回值"><a href="#提取传入函数的参数和返回值" class="headerlink" title="提取传入函数的参数和返回值"></a>提取传入函数的参数和返回值</h2><figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">requestLoadingWrapper</span>&lt;<span class="title">T</span> <span class="title">extends</span> (<span class="params">...args: <span class="built_in">any</span>[]</span>) =&gt; <span class="title">any</span>&gt;(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">  fn: T</span></span></span><br><span class="line"><span class="function"><span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">async</span> <span class="function"><span class="keyword">function</span> (<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">    ...args: Parameters&lt;T&gt;</span></span></span><br><span class="line"><span class="function"><span class="params">  </span>): <span class="title">Promise</span>&lt;<span class="title">Unpacked</span>&lt;<span class="title">ReturnType</span>&lt;<span class="title">T</span>&gt;&gt;&gt; </span>&#123;</span><br><span class="line">    Toast.loading(<span class="string">''</span>)</span><br><span class="line">    <span class="keyword">const</span> res = <span class="keyword">await</span> fn(...args)</span><br><span class="line">    Toast.hide()</span><br><span class="line">    <span class="keyword">if</span> (!res || res.err) &#123;</span><br><span class="line">      Toast.fail(<span class="string">'获取失败'</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> res</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h1><figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> getUserInfo = <span class="keyword">async</span> () =&gt;</span><br><span class="line">  <span class="keyword">await</span> request&lt;GetUserInfoType&gt;(<span class="string">`<span class="subst">$&#123;API_HGAME&#125;</span>/commission/cloud/getUserInfo`</span>)</span><br><span class="line"><span class="comment">// ==&gt; Promise =&gt; (&#123; ...xxxx &#125;)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 包裹高阶函数后，类型正常传递</span></span><br><span class="line"><span class="keyword">const</span> request = requestLoadingWrapper(getUserInfo)</span><br><span class="line"><span class="comment">// ==&gt; Promise =&gt; (&#123; ...xxxx &#125;)</span></span><br></pre></td></tr></table></figure>
+
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ul>
+<li>条件类型：<a href="https://juejin.im/post/6844904066485583885" target="_blank" rel="noopener">https://juejin.im/post/6844904066485583885</a></li>
+</ul>
+
+        </div>
+
+        <div class="article-nav">
+            
+                <div class="article-prev">
+                    <a class="prev btn"
+                       rel="prev"
+                       href="/2020/12/23/%E6%8A%80%E6%9C%AF%E7%AC%94%E8%AE%B0-2020-12-23-%E4%B8%80%E4%B8%AAhook%E6%90%9E%E5%AE%9AReact%E9%A1%B9%E7%9B%AE%E4%B8%AD%E7%9A%84%E5%B9%B3%E6%BB%91%E6%BB%9A%E5%8A%A8/"
+                    >
+                        <i class="fa fa-chevron-left"></i> <span class="post-nav-title-item">一个hook搞定React项目中的平滑滚动</span><span class="post-nav-item">上一篇</span>
+                    </a>
+                </div>
+            
+            
+                <div class="article-next">
+                    <a class="next btn"
+                       rel="next"
+                       href="/2020/05/04/%E6%8A%80%E6%9C%AF%E7%AC%94%E8%AE%B0-2020-05-05-%E5%BE%AE%E5%89%8D%E7%AB%AF%E7%A7%AF%E6%9C%A8%E7%B3%BB%E7%BB%9F-%E5%8E%9F%E7%90%86%E7%AF%87/"
+                    >
+                        <span class="post-nav-title-item">微前端积木系统 - 原理篇</span><span class="post-nav-item">下一篇</span> <i class="fa fa-chevron-right"></i>
+                    </a>
+                </div>
+            
+        </div>
+
+        <div class="comment-container">
+            <div class="comments-container">
+    
+        
+    <div class="valine-container">
+        <script src='//unpkg.com/valine/dist/Valine.min.js'></script>
+        <div id="vcomments"></div>
+        <script>
+            new Valine({
+                el: '#vcomments',
+                appId: 'kVxWaAfKn5NxtpFdjinYGDW3-9Nh9j0Va',
+                appKey: 'yyChy8iJ6WEFFmLDrl2UApvQ',
+                meta: 'nick,mail,link'.split(','),
+                avatar: 'wavatar',
+                enableQQ: true,
+                placeholder: '欢迎留言',
+                lang: 'zh-CN'.toLowerCase()
+            });
+
+
+            // Valine 评论列表增加"作者"标识
+            const getValineDomTimer = setInterval(() => {
+                const vcards = document.querySelectorAll('#vcomments .vcards .vcard');
+                if (vcards.length > 0) {
+                    for (let vcard of vcards) {
+                        const vnick = vcard.querySelector('.vhead .vnick');
+                        if (vnick.innerHTML.toLocaleLowerCase() === 'Ron0115'.toLocaleLowerCase()) {
+                            vcard.classList.add('author');
+                        }
+                    }
+                    clearInterval(getValineDomTimer);
+                } else {
+                    clearInterval(getValineDomTimer);
+                }
+            }, 2000);
+        </script>
+    </div>
+
+
+    
+</div>
+        </div>
+    </div>
+</div>
+
+    <div class="article-toc-container fade-in-down-animation">
+        <div class="article-toc">
+            <div class="post-toc-wrap">
+    <div class="post-toc">
+        <ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#业务场景"><span class="nav-number">1.</span> <span class="nav-text">业务场景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#JS-实现"><span class="nav-number">2.</span> <span class="nav-text">JS 实现</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#重拾-TS-基础"><span class="nav-number">3.</span> <span class="nav-text">重拾 TS 基础
+</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#条件类型-extends-关键字"><span class="nav-number">3.1.</span> <span class="nav-text">条件类型 - extends 关键字</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#有趣的实现：PowerPartial"><span class="nav-number">3.1.1.</span> <span class="nav-text">有趣的实现：PowerPartial</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#infer-关键字"><span class="nav-number">3.2.</span> <span class="nav-text">infer 关键字</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#TS-实现"><span class="nav-number">4.</span> <span class="nav-text">TS 实现</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#获取-Promise-的返回值类型"><span class="nav-number">4.1.</span> <span class="nav-text">获取 Promise 的返回值类型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#提取传入函数的参数和返回值"><span class="nav-number">4.2.</span> <span class="nav-text">提取传入函数的参数和返回值</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#使用"><span class="nav-number">5.</span> <span class="nav-text">使用</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考"><span class="nav-number">6.</span> <span class="nav-text">参考</span></a></li></ol>
+    </div>
+</div>
+        </div>
+    </div>
+
+
+                
+
+            </div>
+
+            
+
+        </main>
+
+        <div class="sidebar-tools">
+            <div class="tools-container">
+    <ul class="tools-list">
+        
+            <li class="search popup-trigger">
+                <i class="fa fa-search"></i>
+            </li>
+            
+<script src="/js/local-search.js"></script>
+
+        
+        <li class="mode-toggle">
+            <i class="fa fa-moon-o"></i>
+        </li>
+        
+    </ul>
+</div>
+
+        </div>
+
+        
+            <div class="scroll-to-top">
+                <ul>
+                    <li>
+                        <!--<i class="fa fa-caret-up"></i>-->
+                        <span class="scroll-percent"></span>
+                    </li>
+                </ul>
+            </div>
+        
+    </div>
+
+    <div class="page-bottom">
+        <footer class="footer">
+    <div class="info-container">
+        <div class="copyright-info info-item">
+            &copy; 2021 <i class="fa fa-heart-o"></i> <a href="/">Ron0115</a>
+        </div>
+        <div class="theme-info info-item">
+            由 <a target="_blank" href="https://hexo.io">Hexo</a> 驱动 | 主题 <a
+                    href="https://github.com/XPoet/hexo-theme-ils" target="_blank">ILS v1.2.0</a>
+        </div>
+        
+            <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+            <div class="website-count info-item">
+                
+                    <span id="busuanzi_container_site_uv" style="display: none">
+                        访问人数 <span id="busuanzi_value_site_uv"></span>
+                    </span>
+                
+                
+                    <span id="busuanzi_container_site_pv" style="display: none">
+                        总访问量 <span id="busuanzi_value_site_pv"></span>
+                    </span>
+                
+            </div>
+        
+    </div>
+</footer>
+
+    </div>
+</div>
+
+    <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+          <span class="search-icon">
+            <i class="fa fa-search"></i>
+          </span>
+            <div class="search-input-container">
+                <input autocomplete="off"
+                       autocorrect="off"
+                       autocapitalize="off"
+                       placeholder="搜索..."
+                       spellcheck="false"
+                       type="search"
+                       class="search-input"
+                >
+            </div>
+            <span class="popup-btn-close">
+                <i class="fa fa-times"></i>
+            </span>
+        </div>
+        <div id="search-result">
+            <div id="no-result">
+                <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<script src="/js/main.js"></script>
+<script src="/js/header-shrink.js"></script>
+<script src="/js/toggle-mode.js"></script>
+
+
+
+    
+<script src="/js/scroll-to-top.js"></script>
+
+
+
+
+
+    
+        
+<script src="/js/code-copy.js"></script>
+
+    
+
+    
+        
+<script src="/lib/anime.min.js"></script>
+<script src="/js/toc.js"></script>
+
+    
+
+
+
+
+</body>
+</html>

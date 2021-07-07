@@ -1,0 +1,645 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title>关于面向对象，原型链，继承</title>
+    <url>/2018/10/14/%E5%9F%BA%E7%A1%80-%E9%9D%A2%E5%90%91%E5%AF%B9%E8%B1%A1%EF%BC%8C%E5%8E%9F%E5%9E%8B%E9%93%BE%EF%BC%8C%E7%BB%A7%E6%89%BF/</url>
+    <content><![CDATA[<p><a name="zjSOR"></a></p>
+<h1 id="关于-JS-如何实现面向对象"><a href="#关于-JS-如何实现面向对象" class="headerlink" title="关于 JS 如何实现面向对象"></a>关于 JS 如何实现面向对象</h1><p><br />先看看官方如何解释：<br /></p>
+<blockquote>
+<p><a href="https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Inheritance_and_the_prototype_chain" target="_blank" rel="noopener">https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Inheritance_and_the_prototype_chain</a> &gt; <br /><br>对于使用过基于类的语言 (如 Java 或 C++) 的开发人员来说，JavaScript 有点令人困惑，因为它是动态的，并且本身不提供一个  <code>class</code>  实现。（<strong>在 ES2015/ES6 中引入了  <code>class</code>  关键字，但那只是语法糖，JavaScript 仍然是基于原型的</strong>）。</p>
+</blockquote>
+<blockquote>
+<p>当谈到继承时，JavaScript 只有一种结构：对象。每个实例对象（ object ）都有一个私有属性（称之为 <strong>proto</strong> ）指向它的构造函数的原型对象（<strong>prototype *<em>）。该原型对象也有一个自己的原型对象( *</em>proto</strong> ) ，层层向上直到一个对象的原型对象为  <code>null</code>。根据定义，<code>null</code>  没有原型，并作为这个<strong>原型链</strong>中的最后一个环节。</p>
+</blockquote>
+<blockquote>
+<p>几乎所有 JavaScript 中的对象都是位于原型链顶端的 <code>Object</code>  的实例。</p>
+</blockquote>
+<blockquote>
+<p>尽管这种原型继承通常被认为是 JavaScript 的弱点之一，但是原型继承模型本身实际上比经典模型更强大。<strong>例如，在原型模型的基础上构建经典模型相当简单。</strong></p>
+</blockquote>
+<a id="more"></a>
+
+<p><a name="fGuXs"></a></p>
+<h2 id="原型模式的实现"><a href="#原型模式的实现" class="headerlink" title="原型模式的实现"></a>原型模式的实现</h2><ul>
+<li>使用原型模式，基于对象实现经典类<ul>
+<li>成员属性：this.xx</li>
+<li>私有属性：function 内的 var, let const</li>
+<li>静态属性：类.xxx</li>
+<li>原型属性和方法：类.prototype.xx</li>
+</ul>
+</li>
+<li>new 一个对象，<em>新对象的<strong>proto</strong>指向构造函数的 prototype</em></li>
+<li>调用对象 this.xx 如果找不到成员属性，会往<strong>proto</strong>去找，一直到原型链的终点</li>
+<li>关于成员属性和原型属性的选择，一般方法绑定在原型上，属性在成员上。<br><a name="g7gqr"></a></li>
+</ul>
+<h2 id="什么是原型和原型链"><a href="#什么是原型和原型链" class="headerlink" title="什么是原型和原型链"></a>什么是原型和原型链</h2><p><img src="https://cdn.nlark.com/yuque/0/2020/png/343322/1592288518104-aac9d0bb-593c-4ae5-bdec-8147ae8e1964.png#align=left&display=inline&height=944&margin=%5Bobject%20Object%5D&originHeight=944&originWidth=992&size=0&status=done&style=none&width=992" alt=""><br /></p>
+<ul>
+<li>说下原型：构造函数有一个 prototype 对象，每 new 一个实例对象时，<strong>所有实例会共享</strong>prototype 对象上的<strong>方法和属性</strong>，这就叫原型。</li>
+<li>说下<strong>构造函数</strong>：实例的 constructor 指向它的构造函数。</li>
+<li>说下<strong>原型链</strong>：实例的<strong>proto</strong>是一个指针，访问一个属性时，找不到就往<strong>proto</strong>查找，最终会找到对象的 prototype Object.prototype,再往下 Object.prototype.<strong>proto</strong>就是 null</li>
+</ul>
+<p><a name="JQnqt"></a></p>
+<h2 id="原型链"><a href="#原型链" class="headerlink" title="原型链"></a>原型链</h2><p><br />其实就是指实例的<strong>proto</strong>，如果一个实例 a,构造函数是 A，继承了 B, B 继承了 C，那么<br /></p>
+<ul>
+<li>a.<strong>proto</strong> === B.prototype</li>
+<li>B.prototype.__proto === C.prototype</li>
+<li>C.prototype.__proto === Object.prototype</li>
+<li>最后 a.<strong>proto</strong>.<strong>proto</strong>.<strong>proto</strong> === Object.prototype</li>
+</ul>
+<p><a name="HNk8N"></a></p>
+<h1 id="继承"><a href="#继承" class="headerlink" title="继承"></a>继承</h1><p><a name="P6bPB"></a></p>
+<h2 id="ES5-模拟继承的原理"><a href="#ES5-模拟继承的原理" class="headerlink" title="ES5 模拟继承的原理"></a>ES5 模拟继承的原理</h2><p><a name="cdXZM"></a></p>
+<h3 id="1-原型链继承-，即继承原型方法"><a href="#1-原型链继承-，即继承原型方法" class="headerlink" title="1. 原型链继承 ，即继承原型方法"></a>1. 原型链继承 ，即继承原型方法</h3><figure class="highlight reasonml"><table><tr><td class="code"><pre><span class="line"><span class="module-access"><span class="module"><span class="identifier">Son</span>.</span></span>prototype = <span class="keyword">new</span> <span class="constructor">Father()</span>;</span><br></pre></td></tr></table></figure>
+
+<p><br />缺点：Father 的所有属性被 son 的所有实例共享，并且还能访问，因为 new 的时候，Father 的 this 上的属性和原型方法都被指向子类的 prototype。<br /></p>
+<p><a name="TUGHB"></a></p>
+<h3 id="2-函数继承，-即继承成员属性"><a href="#2-函数继承，-即继承成员属性" class="headerlink" title="2. 函数继承， 即继承成员属性"></a>2. 函数继承， 即继承成员属性</h3><figure class="highlight actionscript"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">Son</span><span class="params">(name)</span> </span>&#123;</span><br><span class="line">  Father.call(<span class="keyword">this</span>, <span class="string">"我是传给父类的参数"</span>);</span><br><span class="line">  <span class="keyword">this</span>.name = name || <span class="string">"son"</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><a name="RLYUX"></a></p>
+<h2 id="组合继承"><a href="#组合继承" class="headerlink" title="组合继承"></a>组合继承</h2><p><br />使用原型链实现对原型属性和方法的继承，而通过构造函数来实现对实例属性的继承<br /></p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">Son</span>(<span class="params">name</span>) </span>&#123;</span><br><span class="line">  <span class="comment">// 第一次调用父类构造器 子类实例增加父类实例</span></span><br><span class="line">  Father.call(<span class="keyword">this</span>, <span class="string">'我是传给父类的参数'</span>)</span><br><span class="line">  <span class="keyword">this</span>.name = name || <span class="string">'son'</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 经过new运算符 第二次调用父类构造器 子类原型也增加了父类实例</span></span><br><span class="line">Son.prototype = <span class="keyword">new</span> Father()</span><br></pre></td></tr></table></figure>
+
+<p><a name="aCmA6"></a></p>
+<h3 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h3><ol>
+<li>弥补了构造继承的缺点，现在既可以继承实例的属性和方法，也可以继承原型的属性和方法</li>
+<li>既是子类的实例，也是父类的实例</li>
+<li>可以向父类传递参数</li>
+<li>函数可以复用<br><a name="a1udE"></a></li>
+</ol>
+<h3 id="缺点"><a href="#缺点" class="headerlink" title="缺点"></a>缺点</h3><ol>
+<li>调用了两次父类构造函数，生成了两份实例</li>
+<li>constructor 指向问题</li>
+</ol>
+<p><a name="mHBje"></a></p>
+<h2 id="寄生组合继承"><a href="#寄生组合继承" class="headerlink" title="寄生组合继承"></a>寄生组合继承</h2><p><br />通过寄生方式，砍掉父类的实例属性，避免了组合继承生成两份实例的缺点<br /></p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">Son</span>(<span class="params">...args</span>) </span>&#123;</span><br><span class="line">  <span class="comment">// 实例属性继承</span></span><br><span class="line">  Father.call(<span class="keyword">this</span>, ...args)</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 此步实际作用是 Son.prototype.__proto = Father.prototype</span></span><br><span class="line">Son.prototype = <span class="built_in">Object</span>.create(Father.prototype)</span><br><span class="line"><span class="comment">// 修复构造函数指向, 继承后指向回自身</span></span><br><span class="line">Son.prototype.constructor = Son</span><br></pre></td></tr></table></figure>
+
+<p><a name="DVa1K"></a></p>
+<h1 id="ES6-Class-和-Function-实现类的区别"><a href="#ES6-Class-和-Function-实现类的区别" class="headerlink" title="ES6 Class 和 Function 实现类的区别"></a>ES6 Class 和 Function 实现类的区别</h1><blockquote>
+<p>ES6 的 Class 实现类只是语法糖，与经典的面向对象类是有区别的，JS 采用的是原型模式的设计，即构造函数，Prototype，原型链。</p>
+</blockquote>
+<ul>
+<li>class 内部属性不可枚举</li>
+<li>class 不存在变量提升</li>
+<li>class 默认严格模式</li>
+<li>function 用 this.xx 代表成员属性（外部可访问），内部变量默认就是私有属性。</li>
+<li>往原型上添加属性，初始化后会在<strong>proto</strong>中找到，可通过<code>实例.name4</code>访问</li>
+</ul>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">Person.prototype.name4 = <span class="string">'name4'</span></span><br></pre></td></tr></table></figure>
+
+<p><a name="jvd1V"></a></p>
+<h2 id="class-继承和寄生组合继承区别"><a href="#class-继承和寄生组合继承区别" class="headerlink" title="class 继承和寄生组合继承区别"></a>class 继承和寄生组合继承区别</h2><ul>
+<li>class 使用 extends 实现原型的继承</li>
+<li>使用 super()实现实例属性和方法的继承<br><a name="V78Uh"></a></li>
+</ul>
+<h1 id="模拟-new-的实现"><a href="#模拟-new-的实现" class="headerlink" title="模拟 new 的实现"></a>模拟 new 的实现</h1><figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 模拟new的实现</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">_new</span>(<span class="params">fn, ...args</span>) </span>&#123;</span><br><span class="line">  <span class="comment">// 拿到fn的原型对象：创建对象实例，这样，原型指向fn.prototype</span></span><br><span class="line">  <span class="comment">// 即obj.__proto__ = fn.prototype</span></span><br><span class="line">  <span class="keyword">const</span> obj = <span class="built_in">Object</span>.create(fn.prototype)</span><br><span class="line">  <span class="comment">// 传入原型对象作为this，执行构造函数，参数透传</span></span><br><span class="line">  <span class="keyword">const</span> ret = fn.apply(obj, args)</span><br><span class="line">  <span class="comment">// 没有返回值就返回实例</span></span><br><span class="line">  <span class="keyword">return</span> ret || obj</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><a name="Svbhv"></a></p>
+<h2 id="寄生组合继承和-new-过程的共同点"><a href="#寄生组合继承和-new-过程的共同点" class="headerlink" title="寄生组合继承和 new 过程的共同点"></a>寄生组合继承和 new 过程的共同点</h2><p>这两个知识点其实都是基于原型的设计模式<br /></p>
+<ul>
+<li>创建对象指向构造函数的原型：Object.create(fn.prototype)</li>
+<li>调用构造函数：fn.apply(this, args)</li>
+</ul>
+<br />
+]]></content>
+      <categories>
+        <category>FrontEnd</category>
+      </categories>
+      <tags>
+        <tag>原型模式</tag>
+        <tag>Javascript</tag>
+        <tag>面向对象</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>在业务开发中实践 monorepo</title>
+    <url>/2019/10/14/%E6%8A%80%E6%9C%AF%E7%AC%94%E8%AE%B0-2019-10-15-%E5%9C%A8%E4%B8%9A%E5%8A%A1%E5%BC%80%E5%8F%91%E4%B8%AD%E5%AE%9E%E8%B7%B5monorepo/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>有幸参加 9 月 21 日成都举办的<a href="https://fequan.com/2019/#schedule" target="_blank" rel="noopener"><code>第五届FEDAY</code></a>，其中，工程师王泽的《框架开发中的基础设施搭建》，重点介绍了白鹭引擎最新产品 Egret Pro 在 monorepo 方面的工程实践。不止白鹭引擎，目前很多大型的开源库项目，例如 vue，babel，react 等等，都采用 monorepo 去管理代码。</p>
+<p>其实，不止是大型类库，monorepo 也适用于我们实际的业务开发场景。</p>
+<p>我们通常都会将这些库拆分成多个，创建 git 仓库，打包上传 npm，这样貌似没有什么问题。</p>
+<p>但是当库与库之间产生依赖的时候，问题就暴露出来，修改一个库，依赖它的库也要相应更新版本号，重新发包。当库越来越多，关系越来越复杂，这个维护的过程就相当头痛。</p>
+<p>这个时候，Lerna 正好符合这样的场景。</p>
+<a id="more"></a>
+
+<h2 id="Lerna"><a href="#Lerna" class="headerlink" title="Lerna"></a>Lerna</h2><p>Lerna 是一个 monorepo(多包单仓库)管理工具。</p>
+<p>将多个包放到一个 repo 里，每个 packages 独立发布。</p>
+<p>执行发布时，不需要手动维护各个包的版本号，版本会自动打上并发布。</p>
+<p>Lerna 项目文件结构：</p>
+<figure class="highlight css"><table><tr><td class="code"><pre><span class="line">├── <span class="selector-tag">lerna</span><span class="selector-class">.json</span></span><br><span class="line">├── <span class="selector-tag">package</span><span class="selector-class">.json</span></span><br><span class="line">└── <span class="selector-tag">packages</span></span><br><span class="line">    ├── <span class="selector-tag">package-1</span></span><br><span class="line">    │   ├── <span class="selector-tag">index</span><span class="selector-class">.js</span></span><br><span class="line">    │   └── <span class="selector-tag">package</span><span class="selector-class">.json</span></span><br><span class="line">    └── <span class="selector-tag">package-2</span></span><br><span class="line">        ├── <span class="selector-tag">index</span><span class="selector-class">.ts</span></span><br><span class="line">        └── <span class="selector-tag">package</span><span class="selector-class">.json</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="项目大致框架"><a href="#项目大致框架" class="headerlink" title="项目大致框架"></a>项目大致框架</h2><ol>
+<li>提供一个 createRollupOpts 的方法 ，为每个包初始化一个 rollup 的 options，这里有个细节，将每个包的 node_modules 和 babel 相关的包都设置成 externals 外部依赖。</li>
+<li>createRollupOpts 生成配置，包含 ts，postcss，babel plugin，为每个包生成一份统一的打包配置，遍历所有包执行 rollup 打包。</li>
+<li>jest 的脚本很简单，就是传入包名，拼接目录，调用 require(‘jest’).run([…jestArgs])</li>
+</ol>
+<h3 id="搭建步骤"><a href="#搭建步骤" class="headerlink" title="搭建步骤"></a>搭建步骤</h3><h4 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h4><figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">yarn global add lerna</span><br></pre></td></tr></table></figure>
+
+<h4 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h4><figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">mkdir demo</span><br><span class="line"><span class="built_in">cd</span> demo</span><br><span class="line">lerna init</span><br></pre></td></tr></table></figure>
+
+<p>生成以下目录</p>
+<figure class="highlight stylus"><table><tr><td class="code"><pre><span class="line">├── packages <span class="comment">// 包存放文件夹</span></span><br><span class="line">├── package.json</span><br><span class="line">└── lerna<span class="selector-class">.json</span> <span class="comment">// lerna配置文件</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="配置解释"><a href="#配置解释" class="headerlink" title="配置解释"></a>配置解释</h4><figure class="highlight json"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">"packages"</span>: [</span><br><span class="line">    <span class="string">"packages/*"</span> <span class="comment">// 指定存放包的位置</span></span><br><span class="line">  ],</span><br><span class="line">  <span class="attr">"npmClient"</span>: <span class="string">"yarn"</span>,</span><br><span class="line">  <span class="attr">"useWorkspaces"</span>: <span class="literal">true</span>, <span class="comment">// 使用yarn workspace</span></span><br><span class="line">  <span class="attr">"version"</span>: <span class="string">"independent"</span>, <span class="comment">// 独立模式，每个包有独立的版本</span></span><br><span class="line">  <span class="attr">"command"</span>: &#123;</span><br><span class="line">    <span class="attr">"version"</span>: &#123;</span><br><span class="line">      <span class="attr">"conventionalCommits"</span>: <span class="literal">true</span>, <span class="comment">// 使用conventionalCommits规范升级版本和生成changelog</span></span><br><span class="line">      <span class="attr">"message"</span>: <span class="string">"chore(release): publish [skip ci]"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="attr">"publish"</span>: &#123;</span><br><span class="line">      <span class="attr">"registry"</span>: <span class="string">"https://npm-registry.yy.com"</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注意: 只有符合<a href="https://www.conventionalcommits.org/zh-cn/v1.0.0-beta.4/" target="_blank" rel="noopener">规范</a><br>的 commit 提交才能正确生成<code>CHANGELOG.md</code>文件。</p>
+<p>如果提交的 commit 为<code>fix</code>会自动升级版本的修订号;</p>
+<p>如果为<code>feat</code>则自动更新次版本号;</p>
+<p>如果有<code>BREAKING CHANGE</code> ，则会修改主版本号。</p>
+<h4 id="创建模块"><a href="#创建模块" class="headerlink" title="创建模块"></a>创建模块</h4><figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">lerna create package-1</span><br></pre></td></tr></table></figure>
+
+<p>生成目录结构如下：</p>
+<figure class="highlight crystal"><table><tr><td class="code"><pre><span class="line">├── lerna.json</span><br><span class="line">├── package.json</span><br><span class="line">└── packages</span><br><span class="line">    └── package-<span class="number">1</span></span><br><span class="line">            ├── __tests__</span><br><span class="line">            │    └── a.test.js</span><br><span class="line">            ├── <span class="class"><span class="keyword">lib</span></span></span><br><span class="line">            │    └── index.js</span><br><span class="line">        ├── package.json</span><br><span class="line">        └── README.md</span><br></pre></td></tr></table></figure>
+
+<h4 id="添加依赖"><a href="#添加依赖" class="headerlink" title="添加依赖"></a>添加依赖</h4><figure class="highlight d"><table><tr><td class="code"><pre><span class="line">lerna create <span class="keyword">package</span>-<span class="number">2</span> <span class="comment">// 新建一个package-2</span></span><br><span class="line">larna add <span class="keyword">package</span>-<span class="number">1</span> --<span class="keyword">scope</span>=<span class="keyword">package</span>-<span class="number">2</span> <span class="comment">// 添加package-2到package-1</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="集成-jest"><a href="#集成-jest" class="headerlink" title="集成 jest"></a>集成 jest</h2><h3 id="jest-配置"><a href="#jest-配置" class="headerlink" title="jest 配置"></a>jest 配置</h3><figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">const</span> path = <span class="built_in">require</span>(<span class="string">'path'</span>)</span><br><span class="line"><span class="built_in">module</span>.exports = &#123;</span><br><span class="line">  collectCoverage: <span class="literal">true</span>, <span class="comment">// 收集测试时的覆盖率信息</span></span><br><span class="line">  coverageDirectory: path.resolve(__dirname, <span class="string">'./coverage'</span>), <span class="comment">// 指定输出覆盖信息文件的目录</span></span><br><span class="line">  collectCoverageFrom: [</span><br><span class="line">    <span class="comment">// 指定收集覆盖率的目录文件，只收集每个包的lib目录，不收集打包后的dist目录</span></span><br><span class="line">    <span class="string">'**/lib/**'</span>,</span><br><span class="line">    <span class="string">'!**/dist/**'</span>,</span><br><span class="line">  ],</span><br><span class="line">  testMatch: [</span><br><span class="line">    <span class="comment">// 测试文件匹配规则</span></span><br><span class="line">    <span class="string">'**/__tests__/**/*.test.js'</span>,</span><br><span class="line">  ],</span><br><span class="line">  testPathIgnorePatterns: [</span><br><span class="line">    <span class="comment">// 忽略测试路径</span></span><br><span class="line">    <span class="string">'/node_modules/'</span>,</span><br><span class="line">  ],</span><br><span class="line">  testEnvironment: <span class="string">'jest-environment-jsdom'</span>, <span class="comment">// 运行环境</span></span><br><span class="line">  transform: &#123;</span><br><span class="line">    <span class="string">'^.+\\.[t|j]sx?$'</span>: <span class="string">'babel-jest'</span>, <span class="comment">// 使用babel</span></span><br><span class="line">  &#125;,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>新建 scripts 文件夹,添加 jest.js</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">const</span> minimist = <span class="built_in">require</span>(<span class="string">'minimist'</span>)</span><br><span class="line"><span class="keyword">const</span> rawArgs = process.argv.slice(<span class="number">2</span>)</span><br><span class="line"><span class="keyword">const</span> args = minimist(rawArgs)</span><br><span class="line"><span class="keyword">const</span> path = <span class="built_in">require</span>(<span class="string">'path'</span>)</span><br><span class="line"><span class="keyword">let</span> rootDir = path.resolve(__dirname, <span class="string">'../'</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (args.p) &#123;</span><br><span class="line">  rootDir = rootDir + <span class="string">'/packages/'</span> + args.p</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">const</span> jestArgs = [<span class="string">'--runInBand'</span>, <span class="string">'--rootDir'</span>, rootDir]</span><br><span class="line"></span><br><span class="line"><span class="built_in">console</span>.log(<span class="string">`\n===&gt; running: jest <span class="subst">$&#123;jestArgs.join(<span class="string">' '</span>)&#125;</span>`</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">require</span>(<span class="string">'jest'</span>).run(jestArgs)</span><br></pre></td></tr></table></figure>
+
+<p>根目录 package.json</p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">"scripts"</span>: &#123;</span><br><span class="line">    <span class="attr">"test"</span>: <span class="string">"node scripts/jest.js"</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>运行测试脚本</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">// 执行全部测试</span><br><span class="line">yarn <span class="built_in">test</span></span><br><span class="line"></span><br><span class="line">// 执行某个包测试</span><br><span class="line">yarn <span class="built_in">test</span> -p package-1</span><br></pre></td></tr></table></figure>
+
+<h2 id="集成-rollup-打包"><a href="#集成-rollup-打包" class="headerlink" title="集成 rollup 打包"></a>集成 rollup 打包</h2><h3 id="rollup"><a href="#rollup" class="headerlink" title="rollup"></a>rollup</h3><h4 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h4><p>rollup 从设计之初就是面向<code>ES module</code>的，它诞生时 AMD、CMD、UMD 的格式之争还很火热，作者希望充分利用<code>ES module</code>机制，构建出<code>结构扁平</code>，<code>性能出众</code>的类库。</p>
+<h4 id="ES-module-机制"><a href="#ES-module-机制" class="headerlink" title="ES module 机制"></a>ES module 机制</h4><p>特点：<code>静态化</code>，和运行时无关，即 编译时就能确定模块的依赖关系。</p>
+<p>举例来说：</p>
+<ol>
+<li>ES import 只能作为模块顶层的语句出现，不能出现在 function 里面或是 if 里面</li>
+<li>ES import 的模块名只能是字符串常量，并且是 immutable 的，不能赋值</li>
+</ol>
+<h4 id="为什么是-rollup-不是-webpack"><a href="#为什么是-rollup-不是-webpack" class="headerlink" title="为什么是 rollup 不是 webpack"></a>为什么是 rollup 不是 webpack</h4><p>webpack 简化了 Web 开发各个环节，包括<code>图片自动base64，资源缓存（chunkId），按路由做代码拆分，懒加载</code>等，其更适合打包 APP 应用。</p>
+<p>而 rollup 打包后生成的 bundle 内容十分<code>干净</code></p>
+<ul>
+<li>编译时依赖处理（rollup）自然比运行时依赖处理（webpack）性能更好</li>
+<li><code>tree-shaking</code>:静态分析代码中的 import，并将排除任何未实际使用的代码</li>
+<li>支持导出<code>es</code>模块文件（webpack 不支持导出 es 模块）</li>
+</ul>
+<h4 id="scripts-rollup-config-js"><a href="#scripts-rollup-config-js" class="headerlink" title="scripts/rollup.config.js"></a>scripts/rollup.config.js</h4><figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">const</span> babel = <span class="built_in">require</span>(<span class="string">'rollup-plugin-babel'</span>)</span><br><span class="line"><span class="keyword">const</span> resolve = <span class="built_in">require</span>(<span class="string">'rollup-plugin-node-resolve'</span>)</span><br><span class="line"><span class="keyword">const</span> commonjs = <span class="built_in">require</span>(<span class="string">'rollup-plugin-commonjs'</span>)</span><br><span class="line"><span class="keyword">const</span> path = <span class="built_in">require</span>(<span class="string">'path'</span>)</span><br><span class="line"><span class="keyword">const</span> babelConfig = <span class="built_in">require</span>(<span class="string">'./babel.config'</span>)</span><br><span class="line"><span class="keyword">const</span> fs = <span class="built_in">require</span>(<span class="string">'fs'</span>)</span><br><span class="line"><span class="keyword">const</span> rollupTypescript = <span class="built_in">require</span>(<span class="string">'rollup-plugin-typescript'</span>)</span><br><span class="line"><span class="keyword">const</span> postcss = <span class="built_in">require</span>(<span class="string">'rollup-plugin-postcss'</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">module</span>.exports = <span class="function">(<span class="params">opt, format = <span class="string">'cjs'</span></span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">const</span> file = <span class="string">`<span class="subst">$&#123;path.resolve(opt.path, <span class="string">'./dist'</span>)&#125;</span>/index.<span class="subst">$&#123;format&#125;</span>.js`</span></span><br><span class="line">  <span class="keyword">const</span> getInput = <span class="function">(<span class="params">filename</span>) =&gt;</span> path.resolve(opt.path, <span class="string">`./lib/<span class="subst">$&#123;filename&#125;</span>`</span>)</span><br><span class="line">  <span class="keyword">const</span> isTs = fs.existsSync(getInput(<span class="string">'index.ts'</span>))</span><br><span class="line">  <span class="keyword">const</span> input = isTs ? getInput(<span class="string">'index.ts'</span>) : getInput(<span class="string">'index.js'</span>)</span><br><span class="line">  <span class="keyword">return</span> &#123;</span><br><span class="line">    inputOptions: &#123;</span><br><span class="line">      input,</span><br><span class="line">      plugins: [</span><br><span class="line">        isTs &amp;&amp; rollupTypescript(),</span><br><span class="line">        resolve(&#123;</span><br><span class="line">          <span class="comment">// This makes anything that doesn't start with /, ./ or ../ as external</span></span><br><span class="line">          only: [<span class="regexp">/^\.&#123;0,2&#125;\//</span>],</span><br><span class="line">        &#125;),</span><br><span class="line">        babel(&#123;</span><br><span class="line">          babelrc: <span class="literal">false</span>,</span><br><span class="line">          runtimeHelpers: <span class="literal">true</span>,</span><br><span class="line">          exclude: <span class="regexp">/node_modules/</span>,</span><br><span class="line">          ...babelConfig,</span><br><span class="line">        &#125;),</span><br><span class="line">        postcss(&#123;</span><br><span class="line">          autoModules: <span class="literal">true</span>,</span><br><span class="line">        &#125;),</span><br><span class="line">        commonjs(),</span><br><span class="line">      ],</span><br><span class="line">      external: <span class="function">(<span class="params">id</span>) =&gt;</span> &#123;</span><br><span class="line">        <span class="comment">// 配合babel配置，将core-js作为external打包</span></span><br><span class="line">        <span class="keyword">return</span> opt.externals.includes(id) || <span class="regexp">/core-js|babel|runtime/</span>.test(id)</span><br><span class="line">      &#125;,</span><br><span class="line">    &#125;,</span><br><span class="line">    outputOptions: &#123;</span><br><span class="line">      file,</span><br><span class="line">      format,</span><br><span class="line">      name: opt.name,</span><br><span class="line">      sourcemap: <span class="literal">true</span>,</span><br><span class="line">      exports: <span class="string">'named'</span>,</span><br><span class="line">    &#125;,</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="Babel"><a href="#Babel" class="headerlink" title="Babel"></a>Babel</h3><p>简单配置一下 babel，结合 babel 的 usage 配置，使代码 run anywhere。</p>
+<h4 id="scripts-babel-config-js"><a href="#scripts-babel-config-js" class="headerlink" title="scripts/babel.config.js"></a>scripts/babel.config.js</h4><figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="built_in">module</span>.exports = &#123;</span><br><span class="line">  presets: [</span><br><span class="line">    [</span><br><span class="line">      <span class="string">'@babel/preset-env'</span>,</span><br><span class="line">      &#123;</span><br><span class="line">        <span class="comment">// tree-shaking for webpack or rollup(force false in rollup)</span></span><br><span class="line">        modules: <span class="literal">false</span>,</span><br><span class="line">        <span class="comment">// “usage”: 不需要手动在代码里写import‘@babel/polyfilll’，</span></span><br><span class="line">        <span class="comment">// 打包时会自动根据实际代码的使用情况，babel会自动根据env引入代码里实际用到的部分polyfilll模块</span></span><br><span class="line">        useBuiltIns: <span class="string">'usage'</span>,</span><br><span class="line">        corejs: <span class="number">3</span></span><br><span class="line">      &#125;</span><br><span class="line">    ],</span><br><span class="line">    <span class="comment">// ts支持</span></span><br><span class="line">    <span class="string">'@babel/preset-typescript'</span>,</span><br><span class="line">    <span class="comment">// react jsx 支持</span></span><br><span class="line">    <span class="string">'@babel/preset-react'</span></span><br><span class="line">  ]</span><br><span class="line">  plugins: [...yourCustomPlugins]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="构建脚本"><a href="#构建脚本" class="headerlink" title="构建脚本"></a>构建脚本</h3><p>按照 jest 脚本的套路，写一个批量打包的脚本：scripts/build.js</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">const</span> minimist = <span class="built_in">require</span>(<span class="string">'minimist'</span>)</span><br><span class="line"><span class="keyword">const</span> rawArgs = process.argv.slice(<span class="number">2</span>)</span><br><span class="line"><span class="keyword">const</span> args = minimist(rawArgs)</span><br><span class="line"><span class="keyword">const</span> fs = <span class="built_in">require</span>(<span class="string">'fs'</span>)</span><br><span class="line"><span class="keyword">const</span> path = <span class="built_in">require</span>(<span class="string">'path'</span>)</span><br><span class="line"><span class="keyword">const</span> packages = fs.readdirSync(path.resolve(__dirname, <span class="string">'../packages/'</span>))</span><br><span class="line"><span class="keyword">const</span> rollupOptions = <span class="built_in">require</span>(<span class="string">'./rollup.config'</span>)</span><br><span class="line"><span class="keyword">const</span> rollup = <span class="built_in">require</span>(<span class="string">'rollup'</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> packageBuildConfig = &#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 遍历所有的包生成配置参数</span></span><br><span class="line">packages</span><br><span class="line">  .filter(<span class="function">(<span class="params">item</span>) =&gt;</span> <span class="regexp">/^([^.]+)$/</span>.test(item))</span><br><span class="line">  .forEach(<span class="function">(<span class="params">item</span>) =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">let</span> packagePath = path.resolve(__dirname, <span class="string">'../packages/'</span>, item)</span><br><span class="line">    <span class="keyword">const</span> &#123; name, dependencies &#125; = <span class="built_in">require</span>(path.resolve(</span><br><span class="line">      packagePath,</span><br><span class="line">      <span class="string">'package.json'</span></span><br><span class="line">    ))</span><br><span class="line">    packageBuildConfig[item] = &#123;</span><br><span class="line">      path: packagePath,</span><br><span class="line">      name,</span><br><span class="line">      externals: <span class="built_in">Object</span>.keys(dependencies || &#123;&#125;),</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">build</span>(<span class="params">configs</span>) </span>&#123;</span><br><span class="line">  <span class="comment">// 遍历执行配置项</span></span><br><span class="line">  configs.forEach(<span class="keyword">async</span> (config) =&gt; &#123;</span><br><span class="line">    <span class="keyword">const</span> watcher = rollup.watch()</span><br><span class="line">    watcher.on(<span class="string">'event'</span>, (event) =&gt; &#123;</span><br><span class="line">      <span class="keyword">if</span> (event.code === <span class="string">'ERROR'</span> || event.code === <span class="string">'FATAL'</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (event.code === <span class="string">'END'</span>) &#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">`<span class="subst">$&#123;config.name&#125;</span> build successed!`</span>)</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;)</span><br><span class="line">    <span class="keyword">const</span> options = [<span class="string">'cjs'</span>, <span class="string">'es'</span>].map(<span class="function">(<span class="params">format</span>) =&gt;</span> rollupOptions(config, format))</span><br><span class="line">    options.forEach(<span class="keyword">async</span> (opt) =&gt; &#123;</span><br><span class="line">      <span class="keyword">const</span> bundle = <span class="keyword">await</span> rollup.rollup(opt.inputOptions)</span><br><span class="line">      <span class="keyword">await</span> bundle.write(opt.outputOptions)</span><br><span class="line">    &#125;)</span><br><span class="line">  &#125;)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="built_in">console</span>.log(<span class="string">'\n===&gt; running build'</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 根据 -p 参数获取执行对应的webpack配置项</span></span><br><span class="line"><span class="keyword">if</span> (args.p) &#123;</span><br><span class="line">  <span class="keyword">if</span> (packageBuildConfig[args.p]) &#123;</span><br><span class="line">    build([packageBuildConfig[args.p]])</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.error(<span class="string">`<span class="subst">$&#123;args.p&#125;</span> package is not find!`</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">  <span class="comment">// 执行所有配置</span></span><br><span class="line">  build(<span class="built_in">Object</span>.values(packageBuildConfig))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>运行构建脚本</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">// 全部打包</span><br><span class="line">yarn build</span><br><span class="line"></span><br><span class="line">// 指定打包</span><br><span class="line">yarn build -p package-1</span><br></pre></td></tr></table></figure>
+
+<h2 id="发布"><a href="#发布" class="headerlink" title="发布"></a>发布</h2><p>执行打版本命令</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">lerna version</span><br></pre></td></tr></table></figure>
+
+<p>发布到 npm</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">lerna publish from-package</span><br></pre></td></tr></table></figure>
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>我们通过 leran 创建了一个工具库，无论它们是基础的函数库或者是公共的业务逻辑库,甚至是 React 的自定义 hook，react 组件。通过简单的命令，使所有包拥有统一的测试，构建流程。<br>至此，一个简单的工具库搭建完毕。</p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><p>lerna：<a href="https://github.com/lerna/lerna" target="_blank" rel="noopener">https://github.com/lerna/lerna</a></p>
+<p>babel: <a href="https://babeljs.io/" target="_blank" rel="noopener">https://babeljs.io/</a></p>
+<p>rollup.js: <a href="https://www.rollupjs.com/" target="_blank" rel="noopener">https://www.rollupjs.com/</a></p>
+<p>jest: <a href="https://jestjs.io/" target="_blank" rel="noopener">https://jestjs.io/</a></p>
+]]></content>
+      <categories>
+        <category>FrontEnd</category>
+      </categories>
+      <tags>
+        <tag>Javascript</tag>
+        <tag>monorepo</tag>
+        <tag>git</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>canvas合成图片的踩坑之旅</title>
+    <url>/2020/04/26/%E6%8A%80%E6%9C%AF%E7%AC%94%E8%AE%B0-2020-04-27-canvas%E5%90%88%E6%88%90%E5%9B%BE%E7%89%87%E7%9A%84%E8%B8%A9%E5%9D%91%E4%B9%8B%E6%97%85/</url>
+    <content><![CDATA[<h2 id="需求"><a href="#需求" class="headerlink" title="需求"></a>需求</h2><p>需求效果： 获取数据，渲染到页面的指定位置上，并且支持将该区域的图片高清保存。</p>
+<p>需求细节：</p>
+<ol>
+<li>图片局部元素有灰色滤镜的状态。</li>
+<li>图片根据不同分类 id 动态获取，尺寸不一。</li>
+<li>页面展示区域固定，等比例缩放，输出图片为高清图。</li>
+</ol>
+<h2 id="html2canvas"><a href="#html2canvas" class="headerlink" title="html2canvas"></a>html2canvas</h2><p>经过调研，不再重复造轮子，确定采用 html2canvas 库去实现。</p>
+<h3 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h3><h4 id="1-foreignObject-到-canvas-模式"><a href="#1-foreignObject-到-canvas-模式" class="headerlink" title="1. foreignObject 到 canvas 模式"></a>1. foreignObject 到 canvas 模式</h4><blockquote>
+<p>对应 html2canvas 的<code>foreignObjectRendering</code>选项</p>
+</blockquote>
+<ol>
+<li><p>把要截图的 dom 克隆一份，过程中把 getComputedStyle 附上 style</p>
+</li>
+<li><p>放到 svg 的 foreignObject 中</p>
+</li>
+<li><p>把 svg 序列化成 img 的 src（SVG 直接内联）：</p>
+</li>
+</ol>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">img.src = <span class="string">"data:image/svg+xml;charset=utf-8,"</span> + <span class="built_in">encodeURIComponent</span>(<span class="keyword">new</span> XMLSerializer().serializeToString(svg));</span><br></pre></td></tr></table></figure>
+
+<ol start="4">
+<li>ctx.drawImage(img, ….)</li>
+</ol>
+<a id="more"></a>
+
+<h4 id="纯-canvas-模式"><a href="#纯-canvas-模式" class="headerlink" title="纯 canvas 模式"></a>纯 canvas 模式</h4><figure class="highlight angelscript"><table><tr><td class="code"><pre><span class="line"><span class="number">1.</span>把要截图的dom克隆一份，过程中把getComputedStyle附上style</span><br><span class="line"></span><br><span class="line"><span class="number">2.</span>把克隆的dom转成类似VirtualDom的对象</span><br><span class="line"></span><br><span class="line"><span class="number">3.</span>递归这个对象，根据父子关系、层叠关系来计算出一个renderQueue</span><br><span class="line"></span><br><span class="line"><span class="number">4.</span>每个renderQueue Item都是一个虚拟dom对象，根据之前getComputedStyle得到的style信息，调用ctx的各种方法</span><br></pre></td></tr></table></figure>
+
+<p>粗略查看了<code>html2canvas</code>的文档，<code>foreignObjectRendering</code>属性默认为<code>false</code>,对于 <code>foreignObject</code> 这种实现方法，隐约感觉是有坑的, 这里先不做过多调研，抓紧时间上需求。</p>
+<h2 id="坑-1：图片跨域问题"><a href="#坑-1：图片跨域问题" class="headerlink" title="坑 1：图片跨域问题"></a>坑 1：图片跨域问题</h2><p>很快，笔者就遇到一个大家经常碰到的问题，对,就是跨域图片问题。报错类似下图</p>
+<p><img src="/images/2020-04-27-20-48-20.png" alt=""></p>
+<p>如果是 canvas.toDataURL()方法，则会报</p>
+<blockquote>
+<p>Failed to execute ‘toDataURL’ on 　’HTMLCanvasElement’: Tainted canvased may not be exported</p>
+</blockquote>
+<h3 id="为什么报错"><a href="#为什么报错" class="headerlink" title="为什么报错"></a>为什么报错</h3><p>这种错误 很容易让笔者联想到 cors，查阅文档</p>
+<blockquote>
+<p>尽管不通过 CORS 就可以在 <code>&lt;canvas&gt;</code> 中使用其他来源的图片，但是这会污染画布，并且不再认为是安全的画布，这将可能在 <code>&lt;canvas&gt;</code> 检索数据过程中引发异常。</p>
+</blockquote>
+<blockquote>
+<p>被污染的画布在调用<code>getImageData()</code>,<code>toBlob()</code>,<code>toDataURL()</code>都会抛出安全错误。</p>
+</blockquote>
+<blockquote>
+<p>这种机制可以避免未经许可拉取远程网站信息而导致的用户隐私泄露。</p>
+</blockquote>
+<p>其实 CORS 规则在其他场景也很常见</p>
+<blockquote>
+<p>在 HTML5 中，一些 HTML 元素提供了对 CORS 的支持， 例如 <code>&lt;audio&gt;、&lt;img&gt;、&lt;link&gt;、&lt;script&gt; 和 &lt;video&gt;</code> 均有一个跨域属性 (crossOrigin property)，它允许你配置元素获取数据的 CORS 请求。</p>
+</blockquote>
+<p>例如常常用到的<code>&lt;script&gt;</code>标签，如果不遵从 CORS 规则，引入异源的脚本，一般只会捕捉到如<code>Script Error</code>的错误。</p>
+<p>同理，通过 JS 可以获取到图片的<code>EXIF</code>等敏感信息, CORS 规则确保了这些隐私数据不被利用。</p>
+<h3 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h3><ol>
+<li><p>img 标签的<code>crossorigin</code>属性为<code>anonymous</code></p>
+<p>这个属性相当于告诉服务器不携带<code>credential</code>如 cookie 等去请求</p>
+<blockquote>
+<p>这个枚举属性表明是否必须使用 CORS 完成相关图像的抓取。启用 CORS 的图像 可以在 <code>&lt;canvas&gt;</code>元素中重复使用，而不会被污染（tainted）。</p>
+</blockquote>
+<blockquote>
+<p>当用户并未显式使用本属性时，默认不使用 CORS 发起请求</p>
+</blockquote>
+<blockquote>
+<p>IE11+(IE Edge)，Safari，Chrome，Firefox 浏览器均支持，IE9 和 IE10 会报 SecurityError 安全错误</p>
+</blockquote>
+</li>
+<li><p>后端对 CORS 的图片跨域请求要做处理</p>
+<blockquote>
+<p>Access-Control-Allow-Origin “*“, 该配置为允许跨域访问图片。</p>
+</blockquote>
+</li>
+<li><p>html2canvas 打开<code>allowTaint</code>和<code>useCORS</code>属性, 以便告知插件需要开启该特性。</p>
+</li>
+</ol>
+<p>至此，我也以为这个坑就这样平躺过去了，然而，报错依旧，重新检查了一下前后端，确实都符合 cors 的规则，问题出在哪里呢？</p>
+<p>最后，stackoverflow 等等讨论区中找到了原因：浏览器使用缓存中的图片，导致 CORS 请求没有触发。<br>观察控制台，图片确实是<code>from memory cache</code>，所以解决方法如下：</p>
+<figure class="highlight ts"><table><tr><td class="code"><pre><span class="line">&lt;img src=&#123;url + <span class="string">`?t=<span class="subst">$&#123;<span class="built_in">Number</span>(<span class="keyword">new</span> <span class="built_in">Date</span>())&#125;</span>`</span>&#125; /&gt;</span><br></pre></td></tr></table></figure>
+
+<p>对于图片缓存了 CORS 导致问题的这个情况，没有比较官方的解释，社区有人表示 safari 没有这个问题，说是 Chrome 的问题，找了半天没有比较官方的解释，那么就过了吧~</p>
+<h2 id="坑-2：图片清晰度问题"><a href="#坑-2：图片清晰度问题" class="headerlink" title="坑 2：图片清晰度问题"></a>坑 2：图片清晰度问题</h2><p>简单查阅了文档，使用 html2canvas 的<code>scale</code>属性，其默认值是<code>window.devicePixelRatio</code>。</p>
+<p>需求中, 页面的大小为输出图的 0.7 倍</p>
+<p>需要注意的是,布局元素布局的时候要按照设计图的标注等比例放大响应倍数(<code>1 / 0.7 ≈ 1.4</code>)，再利用<code>transform: scale(0.7)</code>进行缩放，这样就能够保证输出原图时的清晰度。</p>
+<h2 id="坑-3：-CSS3-属性支持"><a href="#坑-3：-CSS3-属性支持" class="headerlink" title="坑 3： CSS3 属性支持"></a>坑 3： CSS3 属性支持</h2><h3 id="库的支持"><a href="#库的支持" class="headerlink" title="库的支持"></a>库的支持</h3><p>基于 html2canvas 中实现原理可知，<br>使用纯 canvas 方法，对于每个 css 属性 都必须 在 canvas 实现模拟，对于 css 这种语言，举个例子吧，就相当于实现了一趟 babel 吧，其中的工作量是可想而知的。</p>
+<p>所以，html2canvas 给出了一下不支持的属性如下</p>
+<figure class="highlight routeros"><table><tr><td class="code"><pre><span class="line">background-blend-mode</span><br><span class="line">border-image</span><br><span class="line">box-decoration-break</span><br><span class="line">box-shadow</span><br><span class="line">filter</span><br><span class="line">font-variant-ligatures</span><br><span class="line">mix-blend-mode</span><br><span class="line">object-fit</span><br><span class="line">repeating-linear-gradient()</span><br><span class="line">writing-mode</span><br><span class="line">zoom</span><br></pre></td></tr></table></figure>
+
+<h3 id="模拟-text-overflow-ellipsis"><a href="#模拟-text-overflow-ellipsis" class="headerlink" title="模拟 text-overflow: ellipsis"></a>模拟 text-overflow: ellipsis</h3><p>这个属性输出图片是有问题的, 只能够用 js 对字符串做处理了,这里常规要注意中英文的占位长度问题, 简单处理如下</p>
+<figure class="highlight ts"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">textOverflow</span>(<span class="params">str = '', maxLen = 14</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">let</span> len = <span class="number">0</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; str.length; i++) &#123;</span><br><span class="line">    <span class="keyword">if</span> (str.charCodeAt(i) &gt; <span class="number">127</span> || str.charCodeAt(i) == <span class="number">94</span>) &#123;</span><br><span class="line">      len += <span class="number">2</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      len++</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (len &gt;= maxLen) &#123;</span><br><span class="line">      <span class="keyword">return</span> str.substr(<span class="number">0</span>, i + <span class="number">1</span>) + <span class="string">'...'</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> str</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="模拟-CSS3-filter-grayscale"><a href="#模拟-CSS3-filter-grayscale" class="headerlink" title="模拟 CSS3 filter: grayscale()"></a>模拟 CSS3 filter: grayscale()</h3><p>常规操作，还是到 issue 讨论区看看，果然半年前是有人提过 pr，至今还没有处理</p>
+<p>此时笔者内心还是晾了一把，逛了一圈，笔者用简单的 function 实现了，复杂度 O(xy), 原理是提取出 ImageData，操作 <code>ImageData.data</code> 属性，修改每个像素点的色值。</p>
+<blockquote>
+<p>只读的 ImageData.data 属性，返回 Uint8ClampedArray ，描述一个一维数组，包含以 RGBA 顺序的数据，数据使用 0 至 255（包含）的整数表示。</p>
+</blockquote>
+<figure class="highlight ts"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> dataURLtoBlob <span class="keyword">from</span> <span class="string">'blueimp-canvas-to-blob'</span> <span class="comment">// 使用polyfill</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">grayImage</span>(<span class="params">imgObj: HTMLImageElement</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> canvas = <span class="built_in">document</span>.createElement(<span class="string">'canvas'</span>)</span><br><span class="line">  <span class="keyword">const</span> canvasContext = canvas.getContext(<span class="string">'2d'</span>)</span><br><span class="line"></span><br><span class="line">  <span class="keyword">const</span> imgW = imgObj.naturalWidth <span class="comment">// 这里使用naturalWidth/Height属性，保持原图的清晰度</span></span><br><span class="line">  <span class="keyword">const</span> imgH = imgObj.naturalHeight</span><br><span class="line">  canvas.width = imgW</span><br><span class="line">  canvas.height = imgH</span><br><span class="line">  <span class="keyword">if</span> (!canvasContext) <span class="keyword">return</span></span><br><span class="line">  canvasContext.drawImage(imgObj, <span class="number">0</span>, <span class="number">0</span>)</span><br><span class="line">  <span class="keyword">const</span> imgPixels = canvasContext.getImageData(<span class="number">0</span>, <span class="number">0</span>, imgW, imgH)</span><br><span class="line"></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">let</span> y = <span class="number">0</span>; y &lt; imgPixels.height; y++) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">let</span> x = <span class="number">0</span>; x &lt; imgPixels.width; x++) &#123;</span><br><span class="line">      <span class="keyword">const</span> i = y * <span class="number">4</span> * imgPixels.width + x * <span class="number">4</span></span><br><span class="line">      <span class="keyword">const</span> avg =</span><br><span class="line">        (imgPixels.data[i] + imgPixels.data[i + <span class="number">1</span>] + imgPixels.data[i + <span class="number">2</span>]) / <span class="number">3</span></span><br><span class="line">      imgPixels.data[i] = avg</span><br><span class="line">      imgPixels.data[i + <span class="number">1</span>] = avg</span><br><span class="line">      imgPixels.data[i + <span class="number">2</span>] = avg</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  canvasContext.putImageData(</span><br><span class="line">    imgPixels,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    imgPixels.width,</span><br><span class="line">    imgPixels.height</span><br><span class="line">  )</span><br><span class="line">  <span class="comment">// base64 =&gt; blob =&gt; blobUrl</span></span><br><span class="line">  <span class="keyword">const</span> base64 = canvas.toDataURL()</span><br><span class="line">  <span class="keyword">const</span> blobUrl = URL.createObjectURL(dataURLtoBlob(base64))</span><br><span class="line">  <span class="keyword">return</span> blobUrl</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注意，canvas.toBlob 在一些浏览器上的兼容性是不太好的，查阅如下：</p>
+<p><img src="/images/2020-04-27-20-42-46.png" alt=""></p>
+<p>然而，我是怎么知道的呢？ 因为笔者刚好是基于 Chorme49 内核的 webview 下开发，浏览器抛出了异常，看了下 chrome 的支持，也是刚好栽在了 49 版本之下，卒~</p>
+<p>那么 用 base64 可以吗？ 我觉得是不行的，因为众所周知 base64 的长度体积是很大的，往往比原图要大，不仅如此，base64 生成后是直接更新到虚拟 dom 和真实 dom 的，整个过程造成了性能浪费，而且 base64 过大就会造成了文档体积过大，显然这个方案是不合理的。</p>
+<p>幸好，我们可以简单引入一下 polyfill 解决该问题, 如下</p>
+<figure class="highlight ts"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> dataURLtoBlob <span class="keyword">from</span> <span class="string">'blueimp-canvas-to-blob'</span> <span class="comment">// 使用polyfill</span></span><br><span class="line"><span class="comment">// base64 =&gt; blob =&gt; blobUrl</span></span><br><span class="line"><span class="keyword">const</span> base64 = canvas.toDataURL()</span><br><span class="line"><span class="keyword">const</span> blobUrl = URL.createObjectURL(dataURLtoBlob(base64))</span><br></pre></td></tr></table></figure>
+
+<p>通过<code>dataURLtoBlob</code>的 polyfill，这步是会有一些耗时，但实测下来性能没有问题，至此，又安全地过了这个坑~</p>
+<h2 id="坑-4：内存问题"><a href="#坑-4：内存问题" class="headerlink" title="坑 4：内存问题"></a>坑 4：内存问题</h2><p>接着上面，我们发现使用过程中，在不断地打开带有灰度图片的页面中, 发现了莫名的卡顿问题.</p>
+<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>初步猜测是内存泄漏的问题，使用 <code>菜单 =&gt; 更多工具 =&gt; 任务管理</code>，观察内存占用<br><img src="/images/2020-04-28-15-00-57.png" alt=""></p>
+<p>笔者发现，只要触发一次上面提到的模拟灰度处理<code>grayImage()</code>,内存就上涨 2MB 左右，由此可见，处理后的图片占用内存并没有被回收或者释放。</p>
+<h3 id="定位问题"><a href="#定位问题" class="headerlink" title="定位问题"></a>定位问题</h3><p>回顾一下<code>grayImage</code>的逻辑，看上去是一个纯函数，这时候我们通过经验，可以观察到一些可能存在副作用的代码，例如<code>URL.createObjectURL</code></p>
+<p>查看 MDN 文档, 果然，官方给予了明确的提示：</p>
+<blockquote>
+<p>在每次调用 <code>createObjectURL()</code> 方法时，都会创建一个新的 URL 对象，即使你已经用相同的对象作为参数创建过。当不再需要这些 URL 对象时，每个对象必须通过调用 <code>URL.revokeObjectURL()</code> 方法来释放。</p>
+</blockquote>
+<blockquote>
+<p>浏览器在 document 卸载的时候，会自动释放它们，但是为了获得最佳性能和内存使用状况，你应该在安全的时机主动释放掉它们。</p>
+</blockquote>
+<p>为了便于逻辑的复用，笔者简单地封装了一下<code>&lt;img /&gt;</code>作为 ImgContainer 组件 ，在组件中，加上卸载组件的逻辑, 问题得以解决。</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line">useEffect(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    blobUrlQueue.forEach(<span class="function">(<span class="params">url</span>) =&gt;</span> &#123;</span><br><span class="line">      URL.revokeObjectURL(url)</span><br><span class="line">    &#125;)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;, [])</span><br></pre></td></tr></table></figure>
+
+<h2 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h2><p>以上，由于开发时间紧迫，一些问题没有继续深入地分析，仅仅是以笔记的形式做记录，如有错误或者其他意见，欢迎讨论和指正。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li>ImageData: <a href="https://developer.mozilla.org/zh-CN/docs/Web/API/ImageData" target="_blank" rel="noopener">https://developer.mozilla.org/zh-CN/docs/Web/API/ImageData</a></li>
+<li>html2canvas: <a href="https://html2canvas.hertzen.com/features" target="_blank" rel="noopener">https://html2canvas.hertzen.com/features</a></li>
+<li>启用了 CORS 的图片: <a href="https://developer.mozilla.org/zh-CN/docs/Web/HTML/CORS_enabled_image" target="_blank" rel="noopener">https://developer.mozilla.org/zh-CN/docs/Web/HTML/CORS_enabled_image</a></li>
+<li>CORS settings attributes: <a href="https://developer.mozilla.org/zh-CN/docs/Web/HTML/CORS_settings_attributes" target="_blank" rel="noopener">https://developer.mozilla.org/zh-CN/docs/Web/HTML/CORS_settings_attributes</a></li>
+<li>URL.createObjectURL(): <a href="https://developer.mozilla.org/zh-CN/docs/Web/API/URL/createObjectURL" target="_blank" rel="noopener">https://developer.mozilla.org/zh-CN/docs/Web/API/URL/createObjectURL</a></li>
+</ul>
+]]></content>
+      <categories>
+        <category>FrontEnd</category>
+      </categories>
+      <tags>
+        <tag>html2canvas</tag>
+        <tag>canvas</tag>
+        <tag>js</tag>
+        <tag>blob</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>关于TS中如何处理高阶函数</title>
+    <url>/2020/10/22/%E6%8A%80%E6%9C%AF%E7%AC%94%E8%AE%B0-2020-10-23-%E5%85%B3%E4%BA%8ETS%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E9%AB%98%E9%98%B6%E5%87%BD%E6%95%B0/</url>
+    <content><![CDATA[<h1 id="业务场景"><a href="#业务场景" class="headerlink" title="业务场景"></a>业务场景</h1><p>当我们封装一个 ajax 请求，其本质是异步 Promise 的调用。</p>
+<p>我们可以写一个高阶函数，在 Promise 的 executor 前展示 loading 提示，在请求结束后关闭 loading 提示。</p>
+<p>这样，我们会得到如下<code>requestLoadingWrapper</code>的实现。<br /></p>
+<h1 id="JS-实现"><a href="#JS-实现" class="headerlink" title="JS 实现"></a>JS 实现</h1><p>ajaxFunc（示例）</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> getUserInfo = <span class="keyword">async</span> () =&gt;</span><br><span class="line">  (<span class="keyword">await</span> request) &lt;</span><br><span class="line">  GetUserInfoType &gt;</span><br><span class="line">  <span class="string">`<span class="subst">$&#123;API_HGAME&#125;</span>/commission/cloud/getUserInfo`</span></span><br></pre></td></tr></table></figure>
+
+<p>requestLoadingWrapper</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">requestLoadingWrapper</span> (<span class="params">fn</span>) </span>&#123;</span><br><span class="line">  Toast.loading()</span><br><span class="line">  <span class="keyword">const</span>  res = <span class="keyword">await</span> fn()</span><br><span class="line">  Toast.hide()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>以上，看似很简单，但是如果我们对 TS 的基础不太熟悉或者不够深入的话，写起来还是无从下手的。这样，我们来重温下 TS 的一些基础</p>
+<h1 id="重拾-TS-基础"><a href="#重拾-TS-基础" class="headerlink" title="重拾 TS 基础"></a>重拾 TS 基础<br /></h1><h2 id="条件类型-extends-关键字"><a href="#条件类型-extends-关键字" class="headerlink" title="条件类型 - extends 关键字"></a>条件类型 - extends 关键字</h2><p>extends 用于条件判断中，其作用类似为 js 的 typeof 关键字。</p>
+<blockquote>
+<p>注意：extends 运用在 type 和 class 中时完全是两种作用的效果</p>
+</blockquote>
+<p>直接看例子</p>
+<figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> TypeName&lt;T&gt; = T <span class="keyword">extends</span> <span class="built_in">string</span></span><br><span class="line">  ? <span class="string">'string'</span></span><br><span class="line">  : T <span class="keyword">extends</span> <span class="built_in">number</span></span><br><span class="line">  ? <span class="string">'number'</span></span><br><span class="line">  : T <span class="keyword">extends</span> <span class="built_in">boolean</span></span><br><span class="line">  ? <span class="string">'boolean'</span></span><br><span class="line">  : T <span class="keyword">extends</span> <span class="literal">undefined</span></span><br><span class="line">  ? <span class="string">'undefined'</span></span><br><span class="line">  : T <span class="keyword">extends</span> <span class="built_in">Function</span></span><br><span class="line">  ? <span class="string">'function'</span></span><br><span class="line">  : <span class="string">'object'</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> T0 = TypeName&lt;<span class="built_in">string</span>&gt; <span class="comment">// "string"</span></span><br><span class="line"><span class="keyword">type</span> T1 = TypeName&lt;<span class="string">'a'</span>&gt; <span class="comment">// "string"</span></span><br><span class="line"><span class="keyword">type</span> T2 = TypeName&lt;<span class="literal">true</span>&gt; <span class="comment">// "boolean"</span></span><br><span class="line"><span class="keyword">type</span> T3 = TypeName&lt;<span class="function"><span class="params">()</span> =&gt;</span> <span class="built_in">void</span>&gt; <span class="comment">// "function"</span></span><br><span class="line"><span class="keyword">type</span> T4 = TypeName&lt;<span class="built_in">string</span>[]&gt; <span class="comment">// "object"</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="有趣的实现：PowerPartial"><a href="#有趣的实现：PowerPartial" class="headerlink" title="有趣的实现：PowerPartial"></a>有趣的实现：PowerPartial</h3><p>使用递归，将 object 每一层的参数都转化为可选。</p>
+<figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> PowerPartial&lt;T&gt; = &#123;</span><br><span class="line">  <span class="comment">// 如果是 object，则递归类型</span></span><br><span class="line">  [U <span class="keyword">in</span> keyof T]?: T[U] <span class="keyword">extends</span> object ? PowerPartial&lt;T[U]&gt; : T[U]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="infer-关键字"><a href="#infer-关键字" class="headerlink" title="infer 关键字"></a>infer 关键字</h2><p>用法：在条件类型语句中, 可以用  <code>infer</code>  声明一个类型变量并且对它进行使用。<br /></p>
+<ul>
+<li>这里顺便就可以重温下 TS 中<code>ReturnType</code>  的实现，</li>
+</ul>
+<blockquote>
+<p><code>ReturnType</code> ，意思是获取 Function 类型的返回值类型。</p>
+</blockquote>
+<figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> ReturnType&lt;T&gt; = T <span class="keyword">extends</span> (...args: <span class="built_in">any</span>[]) =&gt; infer R ? R : <span class="built_in">any</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>类似地， <code>Parameter</code>  的实现也大同小异</li>
+</ul>
+<figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="comment">// node_modules/typescript/lib/lib.es5.d.ts</span></span><br><span class="line"><span class="keyword">type</span> Parameters&lt;T <span class="keyword">extends</span> (...args: <span class="built_in">any</span>[]) =&gt; <span class="built_in">any</span>&gt; = T <span class="keyword">extends</span> (</span><br><span class="line">  ...args: infer P</span><br><span class="line">) =&gt; <span class="built_in">any</span></span><br><span class="line">  ? P</span><br><span class="line">  : never</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>还有 <code>ConstructorParameter</code> ,获取构造函数的参数</li>
+</ul>
+<figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="comment">// node_modules/typescript/lib/lib.es5.d.ts</span></span><br><span class="line"><span class="keyword">type</span> ConstructorParameters&lt;</span><br><span class="line">  T <span class="keyword">extends</span> <span class="keyword">new</span> (...args: <span class="built_in">any</span>[]) =&gt; <span class="built_in">any</span></span><br><span class="line">&gt; = T <span class="keyword">extends</span> <span class="keyword">new</span> (...args: infer P) =&gt; <span class="built_in">any</span> ? P : never</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>还有 <code>InstanceType</code> ，获取构造函数的实例类型</li>
+</ul>
+<figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="comment">// node_modules/typescript/lib/lib.es5.d.ts</span></span><br><span class="line"><span class="keyword">type</span> InstanceType&lt;T <span class="keyword">extends</span> <span class="keyword">new</span> (...args: <span class="built_in">any</span>[]) =&gt; <span class="built_in">any</span>&gt; = T <span class="keyword">extends</span> <span class="keyword">new</span> (</span><br><span class="line">  ...args: <span class="built_in">any</span>[]</span><br><span class="line">) =&gt; infer R</span><br><span class="line">  ? R</span><br><span class="line">  : <span class="built_in">any</span></span><br></pre></td></tr></table></figure>
+
+<h1 id="TS-实现"><a href="#TS-实现" class="headerlink" title="TS 实现"></a>TS 实现</h1><h2 id="获取-Promise-的返回值类型"><a href="#获取-Promise-的返回值类型" class="headerlink" title="获取 Promise 的返回值类型"></a>获取 Promise 的返回值类型</h2><p>利用条件类型和  <code>infer</code>  关键字，我们还可以方便地实现获取 Promise 对象的返回值类型</p>
+<figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> Unpacked&lt;T&gt; = T <span class="keyword">extends</span> <span class="built_in">Promise</span>&lt;infer P&gt; ? P : T</span><br></pre></td></tr></table></figure>
+
+<h2 id="提取传入函数的参数和返回值"><a href="#提取传入函数的参数和返回值" class="headerlink" title="提取传入函数的参数和返回值"></a>提取传入函数的参数和返回值</h2><figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">requestLoadingWrapper</span>&lt;<span class="title">T</span> <span class="title">extends</span> (<span class="params">...args: <span class="built_in">any</span>[]</span>) =&gt; <span class="title">any</span>&gt;(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">  fn: T</span></span></span><br><span class="line"><span class="function"><span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">async</span> <span class="function"><span class="keyword">function</span> (<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">    ...args: Parameters&lt;T&gt;</span></span></span><br><span class="line"><span class="function"><span class="params">  </span>): <span class="title">Promise</span>&lt;<span class="title">Unpacked</span>&lt;<span class="title">ReturnType</span>&lt;<span class="title">T</span>&gt;&gt;&gt; </span>&#123;</span><br><span class="line">    Toast.loading(<span class="string">''</span>)</span><br><span class="line">    <span class="keyword">const</span> res = <span class="keyword">await</span> fn(...args)</span><br><span class="line">    Toast.hide()</span><br><span class="line">    <span class="keyword">if</span> (!res || res.err) &#123;</span><br><span class="line">      Toast.fail(<span class="string">'获取失败'</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> res</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h1><figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> getUserInfo = <span class="keyword">async</span> () =&gt;</span><br><span class="line">  <span class="keyword">await</span> request&lt;GetUserInfoType&gt;(<span class="string">`<span class="subst">$&#123;API_HGAME&#125;</span>/commission/cloud/getUserInfo`</span>)</span><br><span class="line"><span class="comment">// ==&gt; Promise =&gt; (&#123; ...xxxx &#125;)</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 包裹高阶函数后，类型正常传递</span></span><br><span class="line"><span class="keyword">const</span> request = requestLoadingWrapper(getUserInfo)</span><br><span class="line"><span class="comment">// ==&gt; Promise =&gt; (&#123; ...xxxx &#125;)</span></span><br></pre></td></tr></table></figure>
+
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ul>
+<li>条件类型：<a href="https://juejin.im/post/6844904066485583885" target="_blank" rel="noopener">https://juejin.im/post/6844904066485583885</a></li>
+</ul>
+]]></content>
+      <categories>
+        <category>FrontEnd</category>
+      </categories>
+      <tags>
+        <tag>Javascript</tag>
+        <tag>React</tag>
+        <tag>Typescript</tag>
+        <tag>泛型</tag>
+        <tag>Generics</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>TS泛型的一些应用</title>
+    <url>/2019/11/25/%E6%8A%80%E6%9C%AF%E7%AC%94%E8%AE%B0-2019-11-25-TS%E6%B3%9B%E5%9E%8B%E7%9A%84%E4%B8%80%E4%BA%9B%E5%BA%94%E7%94%A8/</url>
+    <content><![CDATA[<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>最近用 TS 重写了部分工具函数，其中用到了泛型，在这里做一个分享，帮助大家快速熟悉泛型。</p>
+<h2 id="泛型"><a href="#泛型" class="headerlink" title="泛型"></a>泛型</h2><p>泛型（Generics）是指在定义函数、接口或类的时候，不预先指定具体的类型，而在使用的时候再指定类型的一种特性。</p>
+<a id="more"></a>
+
+<h4 id="简单例子"><a href="#简单例子" class="headerlink" title="简单例子"></a>简单例子</h4><p>首先，我们来实现一个函数 createArray，它可以创建一个指定长度的数组，同时将每一项都填充一个默认值：</p>
+<figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">createArray</span>(<span class="params">length: <span class="built_in">number</span>, value: <span class="built_in">any</span></span>): <span class="title">Array</span>&lt;<span class="title">any</span>&gt; </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">Array</span>(length).fill(value)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这段代码编译不会报错，但是一个显而易见的缺陷是，它并没有准确的定义返回值的类型。</p>
+<p>使用泛型后,类型就可以传递了</p>
+<figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">createArray</span>&lt;<span class="title">T</span>&gt;(<span class="params">length: <span class="built_in">number</span>, value: T</span>): <span class="title">Array</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">Array</span>(length).fill(value)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>接着在调用的时候，可以指定它具体的类型为 string。当然，也可以不手动指定，而让类型推论自动推算出来。</p>
+<h3 id="实现一个-withStyles-HOC"><a href="#实现一个-withStyles-HOC" class="headerlink" title="实现一个 withStyles HOC"></a>实现一个 withStyles HOC</h3><p>withStyles 的作用是将 CSS Modules 的 styles 对象注入原组件，以达到「样式参数化」的目的。并且可以通过不断叠加 hoc 实现样式的复用。这里先不讨论该 HOC 的使用场景，它就是一个平平无奇的 HOC，我们用它做例子看看泛型怎么使用。</p>
+<figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">const</span> ComponentWithStyles = withStyles(styles)(Component)</span><br></pre></td></tr></table></figure>
+
+<h3 id="使用泛型改造"><a href="#使用泛型改造" class="headerlink" title="使用泛型改造"></a>使用泛型改造</h3><p><code>withStyles.tsx</code></p>
+<p>由于对传入的组件属性不可知，以下代码用 any 随便糊弄一顿后，我们会发现它跟我们用 JS 写没有什么区别，TS 的作用没有发挥出来。</p>
+<figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">const</span> withStyles = <span class="function">(<span class="params">stylesProp: object</span>) =&gt;</span> (WrappedComponent: <span class="built_in">any</span>) =&gt; &#123;</span><br><span class="line">  <span class="keyword">const</span> ComponentWithStyles = <span class="function">(<span class="params">&#123; styles, ...props &#125;: React.FC&lt;<span class="built_in">any</span>&gt;</span>) =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">const</span> comStyles = <span class="built_in">Object</span>.assign(&#123;&#125;, stylesProp, styles)</span><br><span class="line">    <span class="keyword">return</span> &lt;WrappedComponent styles=&#123;comStyles&#125; &#123;...props&#125; /&gt;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> ComponentWithStyles</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>接着，我们使用泛型改造</p>
+<figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">interface</span> WithStylesProps &#123;</span><br><span class="line">  styles?: object</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> withStyles = &lt;P <span class="keyword">extends</span> WithStylesProps&gt;<span class="function">(<span class="params">stylesProp: object</span>) =&gt;</span> (</span><br><span class="line">  WrappedComponent: React.FC&lt;P&gt;</span><br><span class="line">) =&gt; &#123;</span><br><span class="line">  <span class="keyword">const</span> WrapCom = React.forwardRef&lt;React.FC&lt;P&gt;, P&gt;(<span class="function"><span class="keyword">function</span> <span class="title">WrapCom</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">    props,</span></span></span><br><span class="line"><span class="function"><span class="params">    ref</span></span></span><br><span class="line"><span class="function"><span class="params">  </span>) </span>&#123;</span><br><span class="line">    <span class="keyword">const</span> &#123; styles, ...otherProps &#125; = props</span><br><span class="line">    <span class="keyword">const</span> comStyles = <span class="built_in">Object</span>.assign(&#123;&#125;, stylesProp, styles)</span><br><span class="line">    <span class="keyword">return</span> (</span><br><span class="line">      &lt;WrappedComponent styles=&#123;comStyles&#125; &#123;...(otherProps <span class="keyword">as</span> P)&#125; ref=&#123;ref&#125; /&gt;</span><br><span class="line">    )</span><br><span class="line">  &#125;)</span><br><span class="line">  <span class="keyword">return</span> WrapCom</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="用法"><a href="#用法" class="headerlink" title="用法"></a>用法</h3><figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">const</span> ComponentWithStyles = withStyles&lt;ComponentProps&gt;(styles)(Component)</span><br></pre></td></tr></table></figure>
+
+<p>使用的时候可以传入源组件的 Props 类型定义: ComponentPropsm,这样，使用 HOC 的时候就保留了源组件的类型提示了。</p>
+<h2 id="window-fetch-的简单封装"><a href="#window-fetch-的简单封装" class="headerlink" title="window.fetch 的简单封装"></a>window.fetch 的简单封装</h2><h3 id="背景-1"><a href="#背景-1" class="headerlink" title="背景"></a>背景</h3><p>项目中存在大量的数据请求逻辑，所以需要对 fetch 进行简单封装</p>
+<h3 id="用法-1"><a href="#用法-1" class="headerlink" title="用法"></a>用法</h3><figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line">fetch(<span class="string">'//baidu.com'</span>).then(<span class="function">(<span class="params">res</span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="built_in">console</span>.log(res)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>我们知道，Response 类的 json()方法返回默认的类型推断为 any,所以我们无法知道接口返回的 json 数据类型。</p>
+<p>使用泛型：对 window.fetch 进行简单封装</p>
+<figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> fetch <span class="keyword">from</span> <span class="string">'isomorphic-fetch'</span></span><br><span class="line"><span class="keyword">import</span> fetchJsonp <span class="keyword">from</span> <span class="string">'fetch-jsonp'</span></span><br><span class="line"><span class="keyword">import</span> &#123; stringify &#125; <span class="keyword">from</span> <span class="string">'qs'</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 这里使用到泛型接口</span></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">interface</span> FrResponse&lt;T = any&gt; &#123;</span><br><span class="line">  data?: T</span><br><span class="line">  err?: <span class="built_in">any</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">interface</span> FrPromise&lt;T = any&gt; <span class="keyword">extends</span> Promise&lt;FrResponse&lt;T&gt;&gt; &#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 此处省略部分次要代码</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">default</span> <span class="function"><span class="keyword">function</span> <span class="title">request</span>&lt;<span class="title">T</span> = <span class="title">any</span>&gt;(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">  url: <span class="built_in">string</span>,</span></span></span><br><span class="line"><span class="function"><span class="params">  &#123;</span></span></span><br><span class="line"><span class="function"><span class="params">    jsonp,</span></span></span><br><span class="line"><span class="function"><span class="params">    query,</span></span></span><br><span class="line"><span class="function"><span class="params">    ...options</span></span></span><br><span class="line"><span class="function"><span class="params">  &#125;: &#123;</span></span></span><br><span class="line"><span class="function"><span class="params">    jsonp?: <span class="built_in">boolean</span></span></span></span><br><span class="line"><span class="function"><span class="params">    query?: object</span></span></span><br><span class="line"><span class="function"><span class="params">  &#125; = &#123;&#125;</span></span></span><br><span class="line"><span class="function"><span class="params"></span>): <span class="title">FrPromise</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> fetchFunction = jsonp</span><br><span class="line">    ? fetchJsonp</span><br><span class="line">    : process.env.NODE_ENV !== <span class="string">'production'</span></span><br><span class="line">    ? <span class="built_in">window</span>.fetch</span><br><span class="line">    : fetch</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> fetchFunction(url + formatQuery(query), &#123;</span><br><span class="line">    credentials: <span class="string">'include'</span>,</span><br><span class="line">    ...options,</span><br><span class="line">  &#125;)</span><br><span class="line">    .then(<span class="function">(<span class="params">res</span>) =&gt;</span> res &amp;&amp; checkStatus(res, jsonp))</span><br><span class="line">    .then(<span class="function">(<span class="params">response</span>) =&gt;</span> response.json())</span><br><span class="line">    .then(<span class="function">(<span class="params">data: T</span>) =&gt;</span> (&#123; data &#125;))</span><br><span class="line">    .catch(<span class="function">(<span class="params">err</span>) =&gt;</span> (&#123; err &#125;))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>使用 ts 之后，我们可以简单通过泛型约束后台返回的 JSON 数据。</p>
+<figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">interface</span> TypeActivityStatus &#123;</span><br><span class="line">  status: <span class="built_in">number</span></span><br><span class="line">  msg: <span class="built_in">string</span></span><br><span class="line">  list: <span class="literal">null</span> | []</span><br><span class="line">  current: <span class="built_in">number</span></span><br><span class="line">  begin: <span class="built_in">number</span></span><br><span class="line">  end: <span class="built_in">number</span></span><br><span class="line">  stage: <span class="built_in">number</span></span><br><span class="line">  stageBegin: <span class="built_in">number</span></span><br><span class="line">  stageEnd: <span class="built_in">number</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">fetch&lt;TypeActivityStatus&gt;(</span><br><span class="line">  <span class="string">'//baidu.com'</span></span><br><span class="line">).then(<span class="function">(<span class="params">res</span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="comment">// 此处会有类型提示</span></span><br><span class="line">  resolve(res.data &amp;&amp; res.data.status)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a href="https://jkchao.github.io/typescript-book-chinese/" target="_blank" rel="noopener">深入理解 TypeScript</a></p>
+<p><a href="https://medium.com/@jrwebdev/react-higher-order-component-patterns-in-typescript-42278f7590fb" target="_blank" rel="noopener">React Higher-Order Components in TypeScript</a></p>
+]]></content>
+      <categories>
+        <category>FrontEnd</category>
+      </categories>
+      <tags>
+        <tag>Javascript</tag>
+        <tag>React</tag>
+        <tag>Typescript</tag>
+        <tag>泛型</tag>
+        <tag>Generics</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>微前端积木系统 - 原理篇</title>
+    <url>/2020/05/04/%E6%8A%80%E6%9C%AF%E7%AC%94%E8%AE%B0-2020-05-05-%E5%BE%AE%E5%89%8D%E7%AB%AF%E7%A7%AF%E6%9C%A8%E7%B3%BB%E7%BB%9F-%E5%8E%9F%E7%90%86%E7%AF%87/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><h3 id="微前端是什么"><a href="#微前端是什么" class="headerlink" title="微前端是什么"></a>微前端是什么</h3><blockquote>
+<p>一种将独立的前端应用组成一个更大的整体的架构风格</p>
+</blockquote>
+<p>微前端是一种架构，将一个页面切分成若干个『微应用』，各个『微应用』可以独立部署，而且每个『微应用』可以供多个页面引入，达到复用的目的。</p>
+<h3 id="微前端有哪些形态"><a href="#微前端有哪些形态" class="headerlink" title="微前端有哪些形态"></a>微前端有哪些形态</h3><p>微前端并不是一种新的东西，它只是一种架构风格，在很早的一些 web 实践中，其实已经有它的身影：</p>
+<ul>
+<li>通过后端模板集成：即通过后端配置路由，将一个 web 应用分割成若干个子应用</li>
+<li>通过 iframe 集成：使用 iframe 分隔页面的多个部分。</li>
+</ul>
+<a id="more"></a>
+
+<p>比较常见一些形态：</p>
+<ul>
+<li>通过 package 集成：将微应用发布成 node 包，供容器应用引入</li>
+<li>通过<code>&lt;script&gt;</code>集成：每个”微应用”都对应一个 <code>&lt;script&gt;</code> 标签，并且在加载时导出一个全局变量。然后，容器应用程序确定应该安装哪些微应用，并调用相关函数以告知微应用何时以及在何处进行渲染。</li>
+<li>通过 Web Component 集成：每个微应用以自定义标签的形式引入。</li>
+</ul>
+<p>以上就是微前端的一些应用形式，使用<code>&lt;script&gt;</code>集成的方式往往是最灵活的，使用频率最高的一种方法。本文就这种方法在项目中的落地展开叙述。</p>
+<h2 id="为什么要接入微前端"><a href="#为什么要接入微前端" class="headerlink" title="为什么要接入微前端"></a>为什么要接入微前端</h2><h3 id="需求分析"><a href="#需求分析" class="headerlink" title="需求分析"></a>需求分析</h3><p>项目中，<code>活动规则</code>模块，占据页面大量篇幅，其中以静态布局为主，但是每次都要复制大量文案，并且重新编写 html 等繁复的代码，当中其实耗费了大量的人力。</p>
+<p>如何解决这个痛点呢？我们使用 『微前端』 + 『组件积木系统』的架构。</p>
+<h3 id="架构选择"><a href="#架构选择" class="headerlink" title="架构选择"></a>架构选择</h3><p>在<code>&lt;script&gt;</code>集成的架构中，我们要产出：</p>
+<ol>
+<li><p>容器组件：多个 html 页面容器（html 模板），支持从积木系统注入容器属性。</p>
+</li>
+<li><p>微应用组件：多个可复用于容器中的微应用（React/Vue 组件），并且支持从积木系统注入自定义属性参数。</p>
+</li>
+<li><p>积木系统： 一个后台系统，用于存储多个容器组件（站点）数据。</p>
+<blockquote>
+<p>在积木系统中，微前端中的容器组件称为『站点』，更贴近使用者。</p>
+</blockquote>
+</li>
+</ol>
+<h2 id="实现原理"><a href="#实现原理" class="headerlink" title="实现原理"></a>实现原理</h2><p>我们通过简单的代码和注释，直观地解释该架构的原理。</p>
+<p>我们将微前端架构中的<code>模板容器</code>对应到积木系统中的<code>模板</code> 或者 <code>站点</code>，</p>
+<p>而<code>微应用</code>则对应到积木系统中的<code>组件</code></p>
+<p>而<code>积木系统</code>，负责对<code>模板</code>的配置数据 进行 增删改查 和 保存， 并拉通<code>站点</code>发布功能。</p>
+<h3 id="模板容器"><a href="#模板容器" class="headerlink" title="模板容器"></a>模板容器</h3><p>模板容器，在积木系统中称为模板（template），如果 一个站点 （site）仅仅包含一个 html 模板，那么模板容器也可以成为 <code>站点</code>。</p>
+<p>模板数据来自积木系统的数据注入（以下只保留核心代码，请重点看注释）</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;!DOCTYPE <span class="meta-keyword">html</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">html</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- 注入页面的基本信息，如title，description等 --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">"UTF-8"</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">title</span>&gt;</span>&#123;&#123; template.data.title | default(title) &#125;&#125;<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">meta</span></span></span><br><span class="line"><span class="tag">      <span class="attr">name</span>=<span class="string">"keywords"</span></span></span><br><span class="line"><span class="tag">      <span class="attr">content</span>=<span class="string">"&#123;&#123; template.data.keywords | default(keywords) &#125;&#125;"</span></span></span><br><span class="line"><span class="tag">    /&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">meta</span></span></span><br><span class="line"><span class="tag">      <span class="attr">name</span>=<span class="string">"description"</span></span></span><br><span class="line"><span class="tag">      <span class="attr">content</span>=<span class="string">"&#123;&#123; template.data.description | default(description) &#125;&#125;"</span></span></span><br><span class="line"><span class="tag">    /&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- 注入cssAssets, 包含多个微前端组件的css文件 --&gt;</span></span><br><span class="line">    &#123;% for item in cssAssets %&#125;</span><br><span class="line">    <span class="tag">&lt;<span class="name">link</span> <span class="attr">rel</span>=<span class="string">"stylesheet"</span> <span class="attr">href</span>=<span class="string">"&#123;&#123; item &#125;&#125;"</span> /&gt;</span></span><br><span class="line">    &#123;% endfor %&#125;</span><br><span class="line">  <span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span> <span class="attr">id</span>=<span class="string">"app"</span>&gt;</span><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- 假设微应用技术栈为React --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">"//jy.yystatic.com/lib/react@16.12.0/umd/react.production.min.js"</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">"//jy.yystatic.com/lib/react-dom@16.12.0/umd/react-dom.production.min.js"</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">"//jy.yystatic.com/lib/prop-types@15.7.2/prop-types.min.js"</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- 注入jsAssets，包含了多个微前端组件的js文件 --&gt;</span></span><br><span class="line">    &#123;% for item in jsAssets %&#125;</span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">"&#123;&#123; item &#125;&#125;"</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">    &#123;% endfor %&#125;</span><br><span class="line">    <span class="comment">&lt;!-- 注入template data，包含一些全局配置数据，如容器（即template）配置等，env可能的值为 editor，production --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="javascript">      <span class="built_in">window</span>.GLOBAL_DATA = &#123; <span class="string">"env"</span>: <span class="string">"&#123;&#123;env&#125;&#125;"</span> &#125;;</span></span><br><span class="line"><span class="handlebars"><span class="xml">      window.TEMPLATE_DATA = </span><span class="template-variable">&#123;&#123; <span class="builtin-name">template</span>.data | dump &#125;&#125;</span><span class="xml">;</span></span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- 注入components的数据，包括组件的props，json-schema协议等 --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="javascript">      <span class="built_in">window</span>.COMPONENTS_LIST = &#123;&#123; components | dump &#125;&#125;;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="actionscript">      <span class="comment">// 以下代码的主要逻辑为获取window上的配置数据，渲染到容器上</span></span></span><br><span class="line"><span class="actionscript">      <span class="comment">// &lt;Container /&gt;的逻辑详见微应用组件的组件渲染章节</span></span></span><br><span class="line"><span class="actionscript">      ReactDOM.render(&lt;Container /&gt;, document.getElementById(<span class="string">'app'</span>))</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="微应用组件"><a href="#微应用组件" class="headerlink" title="微应用组件"></a>微应用组件</h3><p>微应用组件，在积木系统中称为 组件（component）</p>
+<p>对于每一个微应用，我们不关心微应用的技术栈，但是通常我们的 html 模板能够根据微应用的技术栈调用与之对应的<code>render</code>方法，将微应用逐一渲染到页面上。</p>
+<p>因此，我们需要微应用打包产出<code>component.umd.js</code>文件，以及样式文件<code>component.css</code>文件。</p>
+<p>以 image 组件为例，我们产出两个文件</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">link</span></span></span><br><span class="line"><span class="tag">  <span class="attr">rel</span>=<span class="string">"stylesheet"</span></span></span><br><span class="line"><span class="tag">  <span class="attr">href</span>=<span class="string">"https://jy-test.yystatic.com/jy/jy-component-react/jy-component-image-f17d27b33d.css"</span></span></span><br><span class="line"><span class="tag">/&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">"https://jy-test.yystatic.com/jy/jy-component-react/jy-component-image-f17d27b33d.js "</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>这两个标签在模板编译阶段，将动态插入到如下容器组件的模板片段中</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="comment">&lt;!-- 微应用CSS文件 --&gt;</span></span><br><span class="line">&#123;% for item in cssAssets %&#125;</span><br><span class="line"><span class="tag">&lt;<span class="name">link</span> <span class="attr">rel</span>=<span class="string">"stylesheet"</span> <span class="attr">href</span>=<span class="string">"&#123;&#123; item &#125;&#125;"</span> /&gt;</span></span><br><span class="line">&#123;% endfor %&#125;</span><br><span class="line"><span class="comment">&lt;!-- 微应用js文件 --&gt;</span></span><br><span class="line">&#123;% for item in jsAssets %&#125;</span><br><span class="line"><span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">"&#123;&#123; item &#125;&#125;"</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">&#123;% endfor %&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="组件渲染"><a href="#组件渲染" class="headerlink" title="组件渲染"></a>组件渲染</h4><p>接着<code>模板容器</code>的渲染阶段</p>
+<p>Container.jsx 的核心代码如下</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 获取组件列表并渲染</span></span><br><span class="line"><span class="keyword">const</span> components = <span class="built_in">window</span>.COMPONENTS_LIST</span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> (</span><br><span class="line">  &lt;div id=<span class="string">'container'</span> className=&#123;styles.container&#125; style=&#123;style&#125;&gt;</span><br><span class="line">    &#123;components.map(<span class="function">(<span class="params">component</span>) =&gt;</span> &#123;</span><br><span class="line">      <span class="keyword">const</span> fn = <span class="built_in">window</span>[component.name]</span><br><span class="line">      <span class="keyword">if</span> (!fn) <span class="keyword">return</span> <span class="literal">null</span></span><br><span class="line"></span><br><span class="line">      <span class="keyword">const</span> componentFn = fn.__esModule ? fn.default : fn</span><br><span class="line">      <span class="comment">// console.log(data[component.uid])</span></span><br><span class="line">      <span class="keyword">return</span> (</span><br><span class="line">        &lt;React.Fragment key=&#123;component.uid&#125;&gt;</span><br><span class="line">          &#123;componentFn(component.data, component.uid, global.env)&#125;</span><br><span class="line">        &lt;<span class="regexp">/React.Fragment&gt;</span></span><br><span class="line"><span class="regexp">      )</span></span><br><span class="line"><span class="regexp">    &#125;)&#125;</span></span><br><span class="line"><span class="regexp">  &lt;/</span>div&gt;</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h3 id="积木系统"><a href="#积木系统" class="headerlink" title="积木系统"></a>积木系统</h3><p>积木系统，是一个简单的中后台，它的核心功能是修改站点，储存站点，发布站点。</p>
+<p>我们的站点可以是一个模板或者多个模板构成，这里仅讨论单模板站点，所以我们可以把<code>站点</code>简单理解为前面提到的<code>模板</code>，</p>
+<p>一个<code>模板</code>包含多个<code>组件</code>，在积木系统中加载<code>模板</code>, 渲染到积木系统的<code>预览界面</code>中，通过<code>控制台</code>修改站点配置，实时预览站点。</p>
+<h4 id="数据录入"><a href="#数据录入" class="headerlink" title="数据录入"></a>数据录入</h4><p>微前端应用（模板容器）与积木系统之间通过一套设计好的数据协议互相依存。积木系统通过用户定义的模板配置变量，预设配置，支持录入和修改<code>模板容器</code>和<code>组件</code>的配置信息。</p>
+<p>我们通过表单注入<code>站点组件</code>微组件组件<code>的</code>Props<code>, 而这些</code>Props`足够我们实现很多功能，例如：</p>
+<ul>
+<li>传入<code>api地址</code>：组件内部完成后端请求等逻辑，渲染到页面，实现一个可以注入不同数据源的，逻辑相同的微应用。</li>
+<li>传入<code>富文本片段</code>：组件获取富文本片段并渲染，实现了一切静态页面，文案内容的可编辑化的一个富文本微应用。</li>
+</ul>
+<p>积木系统需要配套一套表单控件，用于录入数据。假如要实现以上两个微应用，只需要配套一个富文本插件和简单的文本框就可以了。</p>
+<h4 id="产出"><a href="#产出" class="headerlink" title="产出"></a>产出</h4><p>积木系统产出一个 html 文件，这个 html 文件就是上面提到的<code>模板</code>,只不过积木系统负责将后台保存的<code>站点数据</code>插入到其中，而这些数据就是用户从积木系统录入的。</p>
+<p>这样，就产出了一个独立且可用的 html 文件。</p>
+<h4 id="站点发布"><a href="#站点发布" class="headerlink" title="站点发布"></a>站点发布</h4><p>在积木系统，根据不同的<code>业务组</code>，配置对应的<code>webhooksUrl</code>，当站点修改完毕，点击控制台上的<code>发布</code>按钮，将站点信息提交到 webhookUrl, webhooks 服务负责接收站点的 html 文档数据，将一个可访问的<code>html模板</code>文档上传到服务器，至此发布完成。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>可见，微前端架构不过如此，本文旨在从一个简单的例子介绍整套流程框架的实现。</p>
+<p>在实际使用中肯定会有很多细节问题，包括积木系统的数据库设计，多个模板之间的通讯，多个组件之间的模块打包与资源共享问题， webhooks 服务的搭建等等。</p>
+<p>这些配套设施往往影响到积木系统的易用性，可用性等等，但是这不妨碍我们了解微前端的概念，这里仅作简单分享，欢迎指正。</p>
+]]></content>
+      <categories>
+        <category>FrontEnd</category>
+      </categories>
+      <tags>
+        <tag>微前端</tag>
+        <tag>webpack</tag>
+        <tag>gitlab</tag>
+        <tag>ci</tag>
+        <tag>webhook</tag>
+        <tag>积木系统</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>一个hook搞定React项目中的平滑滚动</title>
+    <url>/2020/12/23/%E6%8A%80%E6%9C%AF%E7%AC%94%E8%AE%B0-2020-12-23-%E4%B8%80%E4%B8%AAhook%E6%90%9E%E5%AE%9AReact%E9%A1%B9%E7%9B%AE%E4%B8%AD%E7%9A%84%E5%B9%B3%E6%BB%91%E6%BB%9A%E5%8A%A8/</url>
+    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>如果你的项目没有引入 jquery，但是又想方便地控制滚动条，这时候，<a href="https://github.com/ron0115/react-smooth-scroll-hook" target="_blank" rel="noopener">react-smooth-scroll-hoook</a>可能会帮上忙。</p>
+<h1 id="useSmoothScroll"><a href="#useSmoothScroll" class="headerlink" title="useSmoothScroll"></a>useSmoothScroll</h1><h2 id="用法"><a href="#用法" class="headerlink" title="用法"></a>用法</h2><p>useSmoothScroll 核心在于 scrollTo 方法，可传入目标节点或者滚动距离，以自定义的速度滚动到该节点。</p>
+<a id="more"></a>
+
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> Demo = <span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">const</span> ref = useRef &lt; HTMLDivElement &gt; <span class="literal">null</span></span><br><span class="line">  <span class="keyword">const</span> &#123; scrollTo &#125; = useSmoothScroll(&#123;</span><br><span class="line">    ref</span><br><span class="line">  &#125;)</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> (</span><br><span class="line">    &lt;&gt;</span><br><span class="line">      &lt;button onClick=&#123;() =&gt; scrollTo(<span class="string">'#y-item-20'</span>)&#125;&gt;</span><br><span class="line">        scrollTo(<span class="string">'#y-item-20'</span>)</span><br><span class="line">      &lt;<span class="regexp">/button&gt;</span></span><br><span class="line"><span class="regexp">      &lt;button onClick=&#123;() =&gt; scrollTo(400)&#125;&gt;scrollTo(400)&lt;/</span>button&gt;</span><br><span class="line"></span><br><span class="line">      &lt;div</span><br><span class="line">        id=&#123;<span class="string">'demo-stories'</span>&#125;</span><br><span class="line">        ref=&#123;ref&#125;</span><br><span class="line">        style=&#123;&#123;</span><br><span class="line">          overflowY: <span class="string">'scroll'</span>,</span><br><span class="line">          maxHeight: <span class="string">'200px'</span>,</span><br><span class="line">          padding: <span class="string">'10px'</span></span><br><span class="line">        &#125;&#125;</span><br><span class="line">      &gt;</span><br><span class="line">        &#123;<span class="built_in">Array</span>(<span class="number">100</span>)</span><br><span class="line">          .fill(<span class="literal">null</span>)</span><br><span class="line">          .map(<span class="function">(<span class="params">_item, i</span>) =&gt;</span> (</span><br><span class="line">            &lt;div key=&#123;i&#125; id=&#123;<span class="string">`y-item-<span class="subst">$&#123;i&#125;</span>`</span>&#125;&gt;</span><br><span class="line">              y-item-&#123;i&#125;</span><br><span class="line">            &lt;<span class="regexp">/div&gt;</span></span><br><span class="line"><span class="regexp">          ))&#125;</span></span><br><span class="line"><span class="regexp">      &lt;/</span>div&gt;</span><br><span class="line">    &lt;<span class="regexp">/&gt;</span></span><br><span class="line"><span class="regexp">  )</span></span><br><span class="line"><span class="regexp">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Demo"><a href="#Demo" class="headerlink" title="Demo"></a>Demo</h3><ul>
+<li><strong><a href="https://codesandbox.io/s/usesmoothscroll-2zt20?file=/Body.stories.tsx" target="_blank" rel="noopener">CodeSandbox</a></strong></li>
+<li><strong><a href="https://ron0115.github.io/react-smooth-scroll-hook/?path=/docs/main-usesmoothscroll--docs">Storybook</a></strong></li>
+</ul>
+<h2 id="核心调用：requestAnimationFrame"><a href="#核心调用：requestAnimationFrame" class="headerlink" title="核心调用：requestAnimationFrame"></a>核心调用：requestAnimationFrame</h2><h3 id="浏览器事件循环"><a href="#浏览器事件循环" class="headerlink" title="浏览器事件循环"></a>浏览器事件循环</h3><p>宏任务 =&gt; 微任务 =&gt; 重绘前执行rAF callback =&gt; GUI线程渲染</p>
+<h3 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h3><p>是一个特别的异步任务，只是注册的方法不加入异步队列，而是加入渲染这一边的队列中，它在渲染的三个步骤之前被执行。通常用来处理渲染相关的工作。</p>
+<ul>
+<li>下次重绘之前执行，处于渲染循环的任务队列中，不属于宏任务或者微任务</li>
+<li>跟随浏览器的刷新频率</li>
+<li>非激活状态，动画暂停，节省性能开销。</li>
+<li>由系统来决定回调函数的执行时机, 如果屏幕刷新率是60Hz,那么回调函数就每16.7ms被执行一次，防止丢帧</li>
+<li>位于渲染队列，执行在微任务之后，下一个宏任务之前。</li>
+</ul>
+<h3 id="rAF的意义和作用"><a href="#rAF的意义和作用" class="headerlink" title="rAF的意义和作用"></a>rAF的意义和作用</h3><ul>
+<li>使用递归结合rAF实现transition或者animation动画。</li>
+<li>弥补CSS3动画的一些缺陷，如不能做scrollTop的平滑滚动。</li>
+<li>CSS3只支持部分曲线方程，需要自动以的话只能使用js动画解决即rAF。</li>
+<li>利用递归入渲染队列的任务，间隔时间根据重绘的频率而定，防止了定时器过快导致掉帧，过慢导致卡顿。</li>
+</ul>
+<h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><ol>
+<li>初始化容器 dom 节点</li>
+<li>监听滚动条的状态，如滚动条是否触达容器的两端。</li>
+<li>scrollTo 方法：通过 requestAnimationFrame 去设置容器的 scrollLeft/scrollTop，直到滚动到目标位置。<h2 id="处理细节"><a href="#处理细节" class="headerlink" title="处理细节"></a>处理细节</h2><h3 id="传入目标节点，计算滚动距离"><a href="#传入目标节点，计算滚动距离" class="headerlink" title="传入目标节点，计算滚动距离"></a>传入目标节点，计算滚动距离</h3></li>
+</ol>
+<ul>
+<li>如果滚动容器是根元素 html 或者 body，那么直接取当前目标节点的上边距（getBoundingClientRect().top/left）,否则，还要减去父容器的上边距。</li>
+<li>使用<code>requestAnimationFrame</code>，递归执行滚动条位移，设置滚动终点，终止递归。</li>
+</ul>
+<h3 id="事件监听"><a href="#事件监听" class="headerlink" title="事件监听"></a>事件监听</h3><ul>
+<li>监听滚动条的属性变化，更新滚动容器的大小。</li>
+<li>监听窗口的 resize 事件，更新滚动容器的大小。</li>
+<li>监听滚动容器内子元素的 dom 变化，更新滚动条位置状态。</li>
+<li>监听容器的 scroll 事件，更新滚动条位置状态。</li>
+</ul>
+<h1 id="useScrollWatch"><a href="#useScrollWatch" class="headerlink" title="useScrollWatch"></a>useScrollWatch</h1><h2 id="用法-1"><a href="#用法-1" class="headerlink" title="用法"></a>用法</h2><p>useScrollWatch 用于解决类似导航栏定位的问题，可以获取当前滚动条位于传入 list 节点数组中的哪个节点。</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> ScrollConatainerMode = <span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">const</span> ref = useRef &lt; HTMLDivElement &gt; <span class="literal">null</span></span><br><span class="line">  <span class="keyword">const</span> &#123; scrollTop, curIndex, curItem &#125; = useScrollWatch(&#123;</span><br><span class="line">    ref,</span><br><span class="line">    list: [</span><br><span class="line">      &#123;</span><br><span class="line">        href: <span class="string">'#item-0'</span></span><br><span class="line">      &#125;,</span><br><span class="line">      &#123;</span><br><span class="line">        href: <span class="string">'#item-10'</span></span><br><span class="line">      &#125;,</span><br><span class="line">      &#123;</span><br><span class="line">        href: <span class="string">'#item-20'</span></span><br><span class="line">      &#125;</span><br><span class="line">    ],</span><br><span class="line">    offset: <span class="number">-10</span></span><br><span class="line">  &#125;)</span><br><span class="line">  <span class="keyword">return</span> (</span><br><span class="line">    &lt;&gt;</span><br><span class="line">      &lt;h2&gt;Scroll Container Mode&lt;<span class="regexp">/h2&gt;</span></span><br><span class="line"><span class="regexp">      &lt;div&gt;</span></span><br><span class="line"><span class="regexp">        &lt;p&gt;</span></span><br><span class="line"><span class="regexp">          &lt;strong&gt;scrollTop:&lt;/</span>strong&gt; &#123;scrollTop&#125;</span><br><span class="line">        &lt;<span class="regexp">/p&gt;</span></span><br><span class="line"><span class="regexp">        &lt;p&gt;</span></span><br><span class="line"><span class="regexp">          &lt;strong&gt;curIndex:&lt;/</span>strong&gt; &#123;curIndex&#125;</span><br><span class="line">        &lt;<span class="regexp">/p&gt;</span></span><br><span class="line"><span class="regexp">        &lt;p&gt;</span></span><br><span class="line"><span class="regexp">          &lt;strong&gt;curHref:&lt;/</span>strong&gt; &#123;curItem?.href&#125;</span><br><span class="line">        &lt;<span class="regexp">/p&gt;</span></span><br><span class="line"><span class="regexp">      &lt;/</span>div&gt;</span><br><span class="line">      &lt;div</span><br><span class="line">        style=&#123;&#123;</span><br><span class="line">          padding: <span class="string">'10px'</span>,</span><br><span class="line">          maxHeight: <span class="string">'200px'</span>,</span><br><span class="line">          overflowY: <span class="string">'scroll'</span></span><br><span class="line">        &#125;&#125;</span><br><span class="line">        ref=&#123;ref&#125;</span><br><span class="line">      &gt;</span><br><span class="line">        &#123;<span class="built_in">Array</span>(<span class="number">100</span>)</span><br><span class="line">          .fill(<span class="literal">null</span>)</span><br><span class="line">          .map(<span class="function">(<span class="params">_item, i</span>) =&gt;</span> (</span><br><span class="line">            &lt;div key=&#123;i&#125; id=&#123;<span class="string">`item-<span class="subst">$&#123;i&#125;</span>`</span>&#125;&gt;</span><br><span class="line">              item-&#123;i&#125;</span><br><span class="line">            &lt;<span class="regexp">/div&gt;</span></span><br><span class="line"><span class="regexp">          ))&#125;</span></span><br><span class="line"><span class="regexp">      &lt;/</span>div&gt;</span><br><span class="line">    &lt;<span class="regexp">/&gt;</span></span><br><span class="line"><span class="regexp">  )</span></span><br><span class="line"><span class="regexp">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Demo-1"><a href="#Demo-1" class="headerlink" title="Demo"></a>Demo</h3><ul>
+<li><strong><a href="https://codesandbox.io/s/gifted-field-5b3ui?file=/UseScrollWatch.stories.tsx:9-24" target="_blank" rel="noopener">CodeSandbox</a></strong></li>
+<li><strong><a href="https://ron0115.github.io/react-smooth-scroll-hook/?path=/docs/more-usescrollwatch--docs">Storybook</a></strong></li>
+</ul>
+<h2 id="原理-1"><a href="#原理-1" class="headerlink" title="原理"></a>原理</h2><ol>
+<li>初始化节点 list</li>
+<li>监听 scroll 事件和子元素的变化，根据滚动条当前的位置，计算出当前滚动条位于 list 中的哪个节点。</li>
+</ol>
+<h2 id="处理细节-1"><a href="#处理细节-1" class="headerlink" title="处理细节"></a>处理细节</h2><ul>
+<li>需要注意，滚动条的初始点不是父容器的顶部，而是父容器下第一个子元素的顶部（即需要考虑内边距对滚动容器起点的影响）</li>
+</ul>
+<h1 id="搭建文档"><a href="#搭建文档" class="headerlink" title="搭建文档"></a>搭建文档</h1><h2 id="生成参数表格"><a href="#生成参数表格" class="headerlink" title="生成参数表格"></a>生成参数表格</h2><p>使用 storybook，集成 <code>react-docgen-typescript-loader</code> ，轻松通过 TS 类型自动生成文档。具体配置如下见<a href="https://github.com/ron0115/react-smooth-scroll-hook/blob/master/.storybook/main.js" target="_blank" rel="noopener">*<em><code>.storybook/main.js</code> *</em></a><br>**</p>
+<h2 id="将-stories-文件用于-CodeSandbox"><a href="#将-stories-文件用于-CodeSandbox" class="headerlink" title="将 stories 文件用于 CodeSandbox"></a>将 stories 文件用于 CodeSandbox</h2><p>我们可以将文档展示的 demo 一起用于 codesandbox 展示，具体见 <a href="https://github.com/ron0115/react-smooth-scroll-hook/tree/master/example" target="_blank" rel="noopener"><code>./example</code> </a></p>
+<h1 id="编写测试"><a href="#编写测试" class="headerlink" title="编写测试"></a>编写测试</h1><h2 id="单元测试"><a href="#单元测试" class="headerlink" title="单元测试"></a>单元测试</h2><p>为工具方法编写单元测试，具体见 <a href="https://github.com/ron0115/react-smooth-scroll-hook/tree/master/test/specs" target="_blank" rel="noopener"><code>./test/specs</code> </a>，执行 test 命令</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">tsdx <span class="built_in">test</span> --passWithNoTests --config jest.unit.config.js</span><br></pre></td></tr></table></figure>
+
+<h2 id="e2e-测试"><a href="#e2e-测试" class="headerlink" title="e2e 测试"></a>e2e 测试</h2><p>对于组件渲染或者强交互的组件，我们需要通过端到端测试模拟，摆脱人工测试，实现自动化。具体见 <a href="https://github.com/ron0115/react-smooth-scroll-hook/tree/master/test/e2e" target="_blank" rel="noopener"><code>./test/e2e</code> </a></p>
+<h3 id="测试滚动的有效性"><a href="#测试滚动的有效性" class="headerlink" title="测试滚动的有效性"></a>测试滚动的有效性</h3><p>我们通过到列表中的某个元素后，如果该元素的上一个元素在视口中不可见，确定滚动的有效性。</p>
+<p>经过文档的查阅，我使用了 <a href="https://github.com/puppeteer/puppeteer/blob/main/docs/api.md#elementhandleisintersectingviewport" target="_blank" rel="noopener"><code>isIntersectingViewport</code></a>  这个方法，通过该方法，可以判断某个元素是否真正离开屏幕或者在视口中不可见。</p>
+<h4 id="isIntersectingViewport-的缺陷"><a href="#isIntersectingViewport-的缺陷" class="headerlink" title="isIntersectingViewport 的缺陷"></a>isIntersectingViewport 的缺陷</h4><p>在这个过程中，我重写了官方的 <code>isIntersectingViewport</code>  方法，让其支持传入一个误差值。</p>
+<p>为什么呢？由于滑动的距离是通过运算得出的，无可避免地产生了精度问题，导致某元素即使表面上完全不可见了，却由于精度问题， <code>isIntersectingViewport</code>  返回了错误的判断(例如期望值是 0，可能返回 0.000000001)。</p>
+<p>以下为重写代码，可以重点关注增加的 <code>threshold</code> ，传入后 最终的显示比例会加上这个值进行精度修正。</p>
+<blockquote>
+<p>该问题已经向 puppetter 提交了 pr，但尚未处理。<a href="https://github.com/puppeteer/puppeteer/pull/6497" target="_blank" rel="noopener">https://github.com/puppeteer/puppeteer/pull/6497</a></p>
+</blockquote>
+<figure class="highlight typescript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">async</span> <span class="function"><span class="keyword">function</span> <span class="title">isIntersectingViewport</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">  elm: ElementHandle&lt;Element&gt;,</span></span></span><br><span class="line"><span class="function"><span class="params">  options?: &#123;</span></span></span><br><span class="line"><span class="function"><span class="params">    threshold?: <span class="built_in">number</span></span></span></span><br><span class="line"><span class="function"><span class="params">  &#125;</span></span></span><br><span class="line"><span class="function"><span class="params"></span>): <span class="title">Promise</span>&lt;<span class="title">boolean</span>&gt; </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">await</span> elm.evaluate&lt;<span class="function">(<span class="params">element: Element, options</span>) =&gt;</span> <span class="built_in">Promise</span>&lt;<span class="built_in">boolean</span>&gt;&gt;(</span><br><span class="line">    <span class="comment">// 注意：回调函数在浏览器中执行，不能获取node中的变量</span></span><br><span class="line">    <span class="keyword">async</span> (element, options) =&gt; &#123;</span><br><span class="line">      <span class="keyword">const</span> &#123; threshold = <span class="number">0</span> &#125; = options || &#123;&#125;</span><br><span class="line">      <span class="keyword">const</span> visibleRatio = <span class="keyword">await</span> <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function">(<span class="params">resolve</span>) =&gt;</span> &#123;</span><br><span class="line">        <span class="keyword">const</span> observer = <span class="keyword">new</span> IntersectionObserver(<span class="function">(<span class="params">entries</span>) =&gt;</span> &#123;</span><br><span class="line">          resolve(entries[<span class="number">0</span>].intersectionRatio)</span><br><span class="line">          observer.disconnect()</span><br><span class="line">        &#125;)</span><br><span class="line">        observer.observe(element)</span><br><span class="line">      &#125;)</span><br><span class="line">      <span class="keyword">return</span> <span class="built_in">Number</span>(visibleRatio) + threshold &gt; <span class="number">0</span></span><br><span class="line">    &#125;,</span><br><span class="line">    options</span><br><span class="line">  )</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在这里，我们在使用 puppeteer 提供的 api 的时候，需要注意，回调函数在浏览器环境下执行，而不是在 node 环境下，所以两边的环境变量不一样，是不能相互读取的。</p>
+<h1 id="发布"><a href="#发布" class="headerlink" title="发布"></a>发布</h1><p>使用 github-action 完成发布，具体<a href="https://github.com/ron0115/react-smooth-scroll-hook/tree/master/.github/workflows" target="_blank" rel="noopener">脚本</a>，流程如下：</p>
+<ul>
+<li><a href="https://github.com/ron0115/react-smooth-scroll-hook/blob/master/.github/workflows/storybook.yml#L6" target="_blank" rel="noopener">storybook.yml</a>：在 <code>stories/**</code>  和 <code>example.**</code>  或者 <code>Reame.md</code>  发生变更的时候，我们执行文档发布作业。</li>
+<li><a href="https://github.com/ron0115/react-smooth-scroll-hook/blob/master/.github/workflows/release.yml#L6" target="_blank" rel="noopener">release.yml</a>: 在 <code>src/**</code>  源码发生变更的时候，我们执行 npm 发布和文档发布作业。</li>
+</ul>
+]]></content>
+      <categories>
+        <category>FrontEnd</category>
+      </categories>
+      <tags>
+        <tag>Javascript</tag>
+        <tag>React</tag>
+      </tags>
+  </entry>
+</search>

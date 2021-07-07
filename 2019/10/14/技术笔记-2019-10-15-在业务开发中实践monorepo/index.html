@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    
+    <title>
+        在业务开发中实践 monorepo | Ron0115
+    </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    
+        <link rel="shortcut icon" href="/favicon.ico">
+    
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <script id="hexo-configurations">
+    let CONFIG = {"hostname":"ron0115.github.io","root":"/","localsearch":{"enable":true,"trigger":"auto","unescape":false,"preload":false},"themeInfo":{"name":"ILS","version":"1.2.0","author":"XPoet","repository":"https://github.com/XPoet/hexo-theme-ils"},"codeblock":{"border_radius":null,"copy_button":{"enable":false,"show_result":false}},"path":"search.xml"};
+  </script>
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+
+<body>
+<div class="page-template">
+    <div class="page-top">
+        <header class="header-wrapper">
+
+    <div class="header-progress"></div>
+
+    <div class="header-content">
+
+        <a class="logo-title" href="/">
+            Ron0115
+        </a>
+
+        <ul class="menu-list">
+            
+                <li class="menu-item">
+                    <a class=""
+                       href="/"
+                    >
+                        首页
+                    </a>
+                </li>
+            
+                <li class="menu-item">
+                    <a class=""
+                       href="/archives"
+                    >
+                        归档
+                    </a>
+                </li>
+            
+                <li class="menu-item">
+                    <a class=""
+                       href="/about"
+                    >
+                        关于
+                    </a>
+                </li>
+            
+        </ul>
+
+        <div class="menu-bar">
+            <div class="menu-bar-middle"></div>
+        </div>
+    </div>
+
+    <div class="header-drawer">
+        <ul class="drawer-menu-list">
+            
+                <li class="drawer-menu-item">
+                    <a class=""
+                       href="/">首页</a>
+                </li>
+            
+                <li class="drawer-menu-item">
+                    <a class=""
+                       href="/archives">归档</a>
+                </li>
+            
+                <li class="drawer-menu-item">
+                    <a class=""
+                       href="/about">关于</a>
+                </li>
+            
+        </ul>
+    </div>
+
+    <div class="window-mask"></div>
+
+</header>
+
+
+    </div>
+
+    <div class="page-middle ">
+
+        <main class="main-content normal-code-theme">
+
+            <div class="main-content-left">
+                
+                    <div class="fade-in-down-animation">
+    <div class="article-content-container">
+
+        <div class="article-title">
+            <h3><a class="title-hover-animation">在业务开发中实践 monorepo</a></h3>
+        </div>
+
+        <div class="meta-info">
+            <div class="article-meta-info">
+    <span class="article-date article-meta-item">
+        <i class="fa fa-calendar-o"></i> 2019-10-14 16:00:00
+    </span>
+    
+        <span class="article-categories article-meta-item">
+            <i class="fa fa-folder"></i>
+            <ul>
+                
+                    <li>
+                        <a href="/categories/FrontEnd/">FrontEnd</a>
+                    </li>
+                
+            </ul>
+        </span>
+    
+    
+        <span class="article-tags article-meta-item">
+            <i class="fa fa-tags"></i>
+            <ul>
+                
+                    <li>
+                        <a href="/tags/Javascript/">Javascript</a>
+                    </li>
+                
+                    <li>
+                        | <a href="/tags/monorepo/">monorepo</a>
+                    </li>
+                
+                    <li>
+                        | <a href="/tags/git/">git</a>
+                    </li>
+                
+            </ul>
+        </span>
+    
+    
+        <span class="article-pv article-meta-item">
+            <i class="fa fa-eye"></i> <span id="busuanzi_value_page_pv"></span>
+        </span>
+    
+    
+    
+</div>
+
+        </div>
+
+        <div class="article-content markdown-body">
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>有幸参加 9 月 21 日成都举办的<a href="https://fequan.com/2019/#schedule" target="_blank" rel="noopener"><code>第五届FEDAY</code></a>，其中，工程师王泽的《框架开发中的基础设施搭建》，重点介绍了白鹭引擎最新产品 Egret Pro 在 monorepo 方面的工程实践。不止白鹭引擎，目前很多大型的开源库项目，例如 vue，babel，react 等等，都采用 monorepo 去管理代码。</p>
+<p>其实，不止是大型类库，monorepo 也适用于我们实际的业务开发场景。</p>
+<p>我们通常都会将这些库拆分成多个，创建 git 仓库，打包上传 npm，这样貌似没有什么问题。</p>
+<p>但是当库与库之间产生依赖的时候，问题就暴露出来，修改一个库，依赖它的库也要相应更新版本号，重新发包。当库越来越多，关系越来越复杂，这个维护的过程就相当头痛。</p>
+<p>这个时候，Lerna 正好符合这样的场景。</p>
+<a id="more"></a>
+
+<h2 id="Lerna"><a href="#Lerna" class="headerlink" title="Lerna"></a>Lerna</h2><p>Lerna 是一个 monorepo(多包单仓库)管理工具。</p>
+<p>将多个包放到一个 repo 里，每个 packages 独立发布。</p>
+<p>执行发布时，不需要手动维护各个包的版本号，版本会自动打上并发布。</p>
+<p>Lerna 项目文件结构：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">├── <span class="selector-tag">lerna</span><span class="selector-class">.json</span></span><br><span class="line">├── <span class="selector-tag">package</span><span class="selector-class">.json</span></span><br><span class="line">└── <span class="selector-tag">packages</span></span><br><span class="line">    ├── <span class="selector-tag">package-1</span></span><br><span class="line">    │   ├── <span class="selector-tag">index</span><span class="selector-class">.js</span></span><br><span class="line">    │   └── <span class="selector-tag">package</span><span class="selector-class">.json</span></span><br><span class="line">    └── <span class="selector-tag">package-2</span></span><br><span class="line">        ├── <span class="selector-tag">index</span><span class="selector-class">.ts</span></span><br><span class="line">        └── <span class="selector-tag">package</span><span class="selector-class">.json</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="项目大致框架"><a href="#项目大致框架" class="headerlink" title="项目大致框架"></a>项目大致框架</h2><ol>
+<li>提供一个 createRollupOpts 的方法 ，为每个包初始化一个 rollup 的 options，这里有个细节，将每个包的 node_modules 和 babel 相关的包都设置成 externals 外部依赖。</li>
+<li>createRollupOpts 生成配置，包含 ts，postcss，babel plugin，为每个包生成一份统一的打包配置，遍历所有包执行 rollup 打包。</li>
+<li>jest 的脚本很简单，就是传入包名，拼接目录，调用 require(‘jest’).run([…jestArgs])</li>
+</ol>
+<h3 id="搭建步骤"><a href="#搭建步骤" class="headerlink" title="搭建步骤"></a>搭建步骤</h3><h4 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h4><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yarn global add lerna</span><br></pre></td></tr></table></figure>
+
+<h4 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h4><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mkdir demo</span><br><span class="line"><span class="built_in">cd</span> demo</span><br><span class="line">lerna init</span><br></pre></td></tr></table></figure>
+
+<p>生成以下目录</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">├── packages <span class="comment">// 包存放文件夹</span></span><br><span class="line">├── package.json</span><br><span class="line">└── lerna<span class="selector-class">.json</span> <span class="comment">// lerna配置文件</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="配置解释"><a href="#配置解释" class="headerlink" title="配置解释"></a>配置解释</h4><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">"packages"</span>: [</span><br><span class="line">    <span class="string">"packages/*"</span> <span class="comment">// 指定存放包的位置</span></span><br><span class="line">  ],</span><br><span class="line">  <span class="attr">"npmClient"</span>: <span class="string">"yarn"</span>,</span><br><span class="line">  <span class="attr">"useWorkspaces"</span>: <span class="literal">true</span>, <span class="comment">// 使用yarn workspace</span></span><br><span class="line">  <span class="attr">"version"</span>: <span class="string">"independent"</span>, <span class="comment">// 独立模式，每个包有独立的版本</span></span><br><span class="line">  <span class="attr">"command"</span>: &#123;</span><br><span class="line">    <span class="attr">"version"</span>: &#123;</span><br><span class="line">      <span class="attr">"conventionalCommits"</span>: <span class="literal">true</span>, <span class="comment">// 使用conventionalCommits规范升级版本和生成changelog</span></span><br><span class="line">      <span class="attr">"message"</span>: <span class="string">"chore(release): publish [skip ci]"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="attr">"publish"</span>: &#123;</span><br><span class="line">      <span class="attr">"registry"</span>: <span class="string">"https://npm-registry.yy.com"</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注意: 只有符合<a href="https://www.conventionalcommits.org/zh-cn/v1.0.0-beta.4/" target="_blank" rel="noopener">规范</a><br>的 commit 提交才能正确生成<code>CHANGELOG.md</code>文件。</p>
+<p>如果提交的 commit 为<code>fix</code>会自动升级版本的修订号;</p>
+<p>如果为<code>feat</code>则自动更新次版本号;</p>
+<p>如果有<code>BREAKING CHANGE</code> ，则会修改主版本号。</p>
+<h4 id="创建模块"><a href="#创建模块" class="headerlink" title="创建模块"></a>创建模块</h4><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">lerna create package-1</span><br></pre></td></tr></table></figure>
+
+<p>生成目录结构如下：</p>
+<figure class="highlight crystal"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">├── lerna.json</span><br><span class="line">├── package.json</span><br><span class="line">└── packages</span><br><span class="line">    └── package-<span class="number">1</span></span><br><span class="line">            ├── __tests__</span><br><span class="line">            │    └── a.test.js</span><br><span class="line">            ├── <span class="class"><span class="keyword">lib</span></span></span><br><span class="line">            │    └── index.js</span><br><span class="line">        ├── package.json</span><br><span class="line">        └── README.md</span><br></pre></td></tr></table></figure>
+
+<h4 id="添加依赖"><a href="#添加依赖" class="headerlink" title="添加依赖"></a>添加依赖</h4><figure class="highlight d"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">lerna create <span class="keyword">package</span>-<span class="number">2</span> <span class="comment">// 新建一个package-2</span></span><br><span class="line">larna add <span class="keyword">package</span>-<span class="number">1</span> --<span class="keyword">scope</span>=<span class="keyword">package</span>-<span class="number">2</span> <span class="comment">// 添加package-2到package-1</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="集成-jest"><a href="#集成-jest" class="headerlink" title="集成 jest"></a>集成 jest</h2><h3 id="jest-配置"><a href="#jest-配置" class="headerlink" title="jest 配置"></a>jest 配置</h3><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> path = <span class="built_in">require</span>(<span class="string">'path'</span>)</span><br><span class="line"><span class="built_in">module</span>.exports = &#123;</span><br><span class="line">  collectCoverage: <span class="literal">true</span>, <span class="comment">// 收集测试时的覆盖率信息</span></span><br><span class="line">  coverageDirectory: path.resolve(__dirname, <span class="string">'./coverage'</span>), <span class="comment">// 指定输出覆盖信息文件的目录</span></span><br><span class="line">  collectCoverageFrom: [</span><br><span class="line">    <span class="comment">// 指定收集覆盖率的目录文件，只收集每个包的lib目录，不收集打包后的dist目录</span></span><br><span class="line">    <span class="string">'**/lib/**'</span>,</span><br><span class="line">    <span class="string">'!**/dist/**'</span>,</span><br><span class="line">  ],</span><br><span class="line">  testMatch: [</span><br><span class="line">    <span class="comment">// 测试文件匹配规则</span></span><br><span class="line">    <span class="string">'**/__tests__/**/*.test.js'</span>,</span><br><span class="line">  ],</span><br><span class="line">  testPathIgnorePatterns: [</span><br><span class="line">    <span class="comment">// 忽略测试路径</span></span><br><span class="line">    <span class="string">'/node_modules/'</span>,</span><br><span class="line">  ],</span><br><span class="line">  testEnvironment: <span class="string">'jest-environment-jsdom'</span>, <span class="comment">// 运行环境</span></span><br><span class="line">  transform: &#123;</span><br><span class="line">    <span class="string">'^.+\\.[t|j]sx?$'</span>: <span class="string">'babel-jest'</span>, <span class="comment">// 使用babel</span></span><br><span class="line">  &#125;,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>新建 scripts 文件夹,添加 jest.js</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> minimist = <span class="built_in">require</span>(<span class="string">'minimist'</span>)</span><br><span class="line"><span class="keyword">const</span> rawArgs = process.argv.slice(<span class="number">2</span>)</span><br><span class="line"><span class="keyword">const</span> args = minimist(rawArgs)</span><br><span class="line"><span class="keyword">const</span> path = <span class="built_in">require</span>(<span class="string">'path'</span>)</span><br><span class="line"><span class="keyword">let</span> rootDir = path.resolve(__dirname, <span class="string">'../'</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (args.p) &#123;</span><br><span class="line">  rootDir = rootDir + <span class="string">'/packages/'</span> + args.p</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">const</span> jestArgs = [<span class="string">'--runInBand'</span>, <span class="string">'--rootDir'</span>, rootDir]</span><br><span class="line"></span><br><span class="line"><span class="built_in">console</span>.log(<span class="string">`\n===&gt; running: jest <span class="subst">$&#123;jestArgs.join(<span class="string">' '</span>)&#125;</span>`</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">require</span>(<span class="string">'jest'</span>).run(jestArgs)</span><br></pre></td></tr></table></figure>
+
+<p>根目录 package.json</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">"scripts"</span>: &#123;</span><br><span class="line">    <span class="attr">"test"</span>: <span class="string">"node scripts/jest.js"</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>运行测试脚本</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">// 执行全部测试</span><br><span class="line">yarn <span class="built_in">test</span></span><br><span class="line"></span><br><span class="line">// 执行某个包测试</span><br><span class="line">yarn <span class="built_in">test</span> -p package-1</span><br></pre></td></tr></table></figure>
+
+<h2 id="集成-rollup-打包"><a href="#集成-rollup-打包" class="headerlink" title="集成 rollup 打包"></a>集成 rollup 打包</h2><h3 id="rollup"><a href="#rollup" class="headerlink" title="rollup"></a>rollup</h3><h4 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h4><p>rollup 从设计之初就是面向<code>ES module</code>的，它诞生时 AMD、CMD、UMD 的格式之争还很火热，作者希望充分利用<code>ES module</code>机制，构建出<code>结构扁平</code>，<code>性能出众</code>的类库。</p>
+<h4 id="ES-module-机制"><a href="#ES-module-机制" class="headerlink" title="ES module 机制"></a>ES module 机制</h4><p>特点：<code>静态化</code>，和运行时无关，即 编译时就能确定模块的依赖关系。</p>
+<p>举例来说：</p>
+<ol>
+<li>ES import 只能作为模块顶层的语句出现，不能出现在 function 里面或是 if 里面</li>
+<li>ES import 的模块名只能是字符串常量，并且是 immutable 的，不能赋值</li>
+</ol>
+<h4 id="为什么是-rollup-不是-webpack"><a href="#为什么是-rollup-不是-webpack" class="headerlink" title="为什么是 rollup 不是 webpack"></a>为什么是 rollup 不是 webpack</h4><p>webpack 简化了 Web 开发各个环节，包括<code>图片自动base64，资源缓存（chunkId），按路由做代码拆分，懒加载</code>等，其更适合打包 APP 应用。</p>
+<p>而 rollup 打包后生成的 bundle 内容十分<code>干净</code></p>
+<ul>
+<li>编译时依赖处理（rollup）自然比运行时依赖处理（webpack）性能更好</li>
+<li><code>tree-shaking</code>:静态分析代码中的 import，并将排除任何未实际使用的代码</li>
+<li>支持导出<code>es</code>模块文件（webpack 不支持导出 es 模块）</li>
+</ul>
+<h4 id="scripts-rollup-config-js"><a href="#scripts-rollup-config-js" class="headerlink" title="scripts/rollup.config.js"></a>scripts/rollup.config.js</h4><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> babel = <span class="built_in">require</span>(<span class="string">'rollup-plugin-babel'</span>)</span><br><span class="line"><span class="keyword">const</span> resolve = <span class="built_in">require</span>(<span class="string">'rollup-plugin-node-resolve'</span>)</span><br><span class="line"><span class="keyword">const</span> commonjs = <span class="built_in">require</span>(<span class="string">'rollup-plugin-commonjs'</span>)</span><br><span class="line"><span class="keyword">const</span> path = <span class="built_in">require</span>(<span class="string">'path'</span>)</span><br><span class="line"><span class="keyword">const</span> babelConfig = <span class="built_in">require</span>(<span class="string">'./babel.config'</span>)</span><br><span class="line"><span class="keyword">const</span> fs = <span class="built_in">require</span>(<span class="string">'fs'</span>)</span><br><span class="line"><span class="keyword">const</span> rollupTypescript = <span class="built_in">require</span>(<span class="string">'rollup-plugin-typescript'</span>)</span><br><span class="line"><span class="keyword">const</span> postcss = <span class="built_in">require</span>(<span class="string">'rollup-plugin-postcss'</span>)</span><br><span class="line"></span><br><span class="line"><span class="built_in">module</span>.exports = <span class="function">(<span class="params">opt, format = <span class="string">'cjs'</span></span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">const</span> file = <span class="string">`<span class="subst">$&#123;path.resolve(opt.path, <span class="string">'./dist'</span>)&#125;</span>/index.<span class="subst">$&#123;format&#125;</span>.js`</span></span><br><span class="line">  <span class="keyword">const</span> getInput = <span class="function">(<span class="params">filename</span>) =&gt;</span> path.resolve(opt.path, <span class="string">`./lib/<span class="subst">$&#123;filename&#125;</span>`</span>)</span><br><span class="line">  <span class="keyword">const</span> isTs = fs.existsSync(getInput(<span class="string">'index.ts'</span>))</span><br><span class="line">  <span class="keyword">const</span> input = isTs ? getInput(<span class="string">'index.ts'</span>) : getInput(<span class="string">'index.js'</span>)</span><br><span class="line">  <span class="keyword">return</span> &#123;</span><br><span class="line">    inputOptions: &#123;</span><br><span class="line">      input,</span><br><span class="line">      plugins: [</span><br><span class="line">        isTs &amp;&amp; rollupTypescript(),</span><br><span class="line">        resolve(&#123;</span><br><span class="line">          <span class="comment">// This makes anything that doesn't start with /, ./ or ../ as external</span></span><br><span class="line">          only: [<span class="regexp">/^\.&#123;0,2&#125;\//</span>],</span><br><span class="line">        &#125;),</span><br><span class="line">        babel(&#123;</span><br><span class="line">          babelrc: <span class="literal">false</span>,</span><br><span class="line">          runtimeHelpers: <span class="literal">true</span>,</span><br><span class="line">          exclude: <span class="regexp">/node_modules/</span>,</span><br><span class="line">          ...babelConfig,</span><br><span class="line">        &#125;),</span><br><span class="line">        postcss(&#123;</span><br><span class="line">          autoModules: <span class="literal">true</span>,</span><br><span class="line">        &#125;),</span><br><span class="line">        commonjs(),</span><br><span class="line">      ],</span><br><span class="line">      external: <span class="function">(<span class="params">id</span>) =&gt;</span> &#123;</span><br><span class="line">        <span class="comment">// 配合babel配置，将core-js作为external打包</span></span><br><span class="line">        <span class="keyword">return</span> opt.externals.includes(id) || <span class="regexp">/core-js|babel|runtime/</span>.test(id)</span><br><span class="line">      &#125;,</span><br><span class="line">    &#125;,</span><br><span class="line">    outputOptions: &#123;</span><br><span class="line">      file,</span><br><span class="line">      format,</span><br><span class="line">      name: opt.name,</span><br><span class="line">      sourcemap: <span class="literal">true</span>,</span><br><span class="line">      exports: <span class="string">'named'</span>,</span><br><span class="line">    &#125;,</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="Babel"><a href="#Babel" class="headerlink" title="Babel"></a>Babel</h3><p>简单配置一下 babel，结合 babel 的 usage 配置，使代码 run anywhere。</p>
+<h4 id="scripts-babel-config-js"><a href="#scripts-babel-config-js" class="headerlink" title="scripts/babel.config.js"></a>scripts/babel.config.js</h4><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">module</span>.exports = &#123;</span><br><span class="line">  presets: [</span><br><span class="line">    [</span><br><span class="line">      <span class="string">'@babel/preset-env'</span>,</span><br><span class="line">      &#123;</span><br><span class="line">        <span class="comment">// tree-shaking for webpack or rollup(force false in rollup)</span></span><br><span class="line">        modules: <span class="literal">false</span>,</span><br><span class="line">        <span class="comment">// “usage”: 不需要手动在代码里写import‘@babel/polyfilll’，</span></span><br><span class="line">        <span class="comment">// 打包时会自动根据实际代码的使用情况，babel会自动根据env引入代码里实际用到的部分polyfilll模块</span></span><br><span class="line">        useBuiltIns: <span class="string">'usage'</span>,</span><br><span class="line">        corejs: <span class="number">3</span></span><br><span class="line">      &#125;</span><br><span class="line">    ],</span><br><span class="line">    <span class="comment">// ts支持</span></span><br><span class="line">    <span class="string">'@babel/preset-typescript'</span>,</span><br><span class="line">    <span class="comment">// react jsx 支持</span></span><br><span class="line">    <span class="string">'@babel/preset-react'</span></span><br><span class="line">  ]</span><br><span class="line">  plugins: [...yourCustomPlugins]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="构建脚本"><a href="#构建脚本" class="headerlink" title="构建脚本"></a>构建脚本</h3><p>按照 jest 脚本的套路，写一个批量打包的脚本：scripts/build.js</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> minimist = <span class="built_in">require</span>(<span class="string">'minimist'</span>)</span><br><span class="line"><span class="keyword">const</span> rawArgs = process.argv.slice(<span class="number">2</span>)</span><br><span class="line"><span class="keyword">const</span> args = minimist(rawArgs)</span><br><span class="line"><span class="keyword">const</span> fs = <span class="built_in">require</span>(<span class="string">'fs'</span>)</span><br><span class="line"><span class="keyword">const</span> path = <span class="built_in">require</span>(<span class="string">'path'</span>)</span><br><span class="line"><span class="keyword">const</span> packages = fs.readdirSync(path.resolve(__dirname, <span class="string">'../packages/'</span>))</span><br><span class="line"><span class="keyword">const</span> rollupOptions = <span class="built_in">require</span>(<span class="string">'./rollup.config'</span>)</span><br><span class="line"><span class="keyword">const</span> rollup = <span class="built_in">require</span>(<span class="string">'rollup'</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> packageBuildConfig = &#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 遍历所有的包生成配置参数</span></span><br><span class="line">packages</span><br><span class="line">  .filter(<span class="function">(<span class="params">item</span>) =&gt;</span> <span class="regexp">/^([^.]+)$/</span>.test(item))</span><br><span class="line">  .forEach(<span class="function">(<span class="params">item</span>) =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">let</span> packagePath = path.resolve(__dirname, <span class="string">'../packages/'</span>, item)</span><br><span class="line">    <span class="keyword">const</span> &#123; name, dependencies &#125; = <span class="built_in">require</span>(path.resolve(</span><br><span class="line">      packagePath,</span><br><span class="line">      <span class="string">'package.json'</span></span><br><span class="line">    ))</span><br><span class="line">    packageBuildConfig[item] = &#123;</span><br><span class="line">      path: packagePath,</span><br><span class="line">      name,</span><br><span class="line">      externals: <span class="built_in">Object</span>.keys(dependencies || &#123;&#125;),</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">build</span>(<span class="params">configs</span>) </span>&#123;</span><br><span class="line">  <span class="comment">// 遍历执行配置项</span></span><br><span class="line">  configs.forEach(<span class="keyword">async</span> (config) =&gt; &#123;</span><br><span class="line">    <span class="keyword">const</span> watcher = rollup.watch()</span><br><span class="line">    watcher.on(<span class="string">'event'</span>, (event) =&gt; &#123;</span><br><span class="line">      <span class="keyword">if</span> (event.code === <span class="string">'ERROR'</span> || event.code === <span class="string">'FATAL'</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span> (event.code === <span class="string">'END'</span>) &#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">`<span class="subst">$&#123;config.name&#125;</span> build successed!`</span>)</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;)</span><br><span class="line">    <span class="keyword">const</span> options = [<span class="string">'cjs'</span>, <span class="string">'es'</span>].map(<span class="function">(<span class="params">format</span>) =&gt;</span> rollupOptions(config, format))</span><br><span class="line">    options.forEach(<span class="keyword">async</span> (opt) =&gt; &#123;</span><br><span class="line">      <span class="keyword">const</span> bundle = <span class="keyword">await</span> rollup.rollup(opt.inputOptions)</span><br><span class="line">      <span class="keyword">await</span> bundle.write(opt.outputOptions)</span><br><span class="line">    &#125;)</span><br><span class="line">  &#125;)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="built_in">console</span>.log(<span class="string">'\n===&gt; running build'</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 根据 -p 参数获取执行对应的webpack配置项</span></span><br><span class="line"><span class="keyword">if</span> (args.p) &#123;</span><br><span class="line">  <span class="keyword">if</span> (packageBuildConfig[args.p]) &#123;</span><br><span class="line">    build([packageBuildConfig[args.p]])</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.error(<span class="string">`<span class="subst">$&#123;args.p&#125;</span> package is not find!`</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">  <span class="comment">// 执行所有配置</span></span><br><span class="line">  build(<span class="built_in">Object</span>.values(packageBuildConfig))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>运行构建脚本</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">// 全部打包</span><br><span class="line">yarn build</span><br><span class="line"></span><br><span class="line">// 指定打包</span><br><span class="line">yarn build -p package-1</span><br></pre></td></tr></table></figure>
+
+<h2 id="发布"><a href="#发布" class="headerlink" title="发布"></a>发布</h2><p>执行打版本命令</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">lerna version</span><br></pre></td></tr></table></figure>
+
+<p>发布到 npm</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">lerna publish from-package</span><br></pre></td></tr></table></figure>
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>我们通过 leran 创建了一个工具库，无论它们是基础的函数库或者是公共的业务逻辑库,甚至是 React 的自定义 hook，react 组件。通过简单的命令，使所有包拥有统一的测试，构建流程。<br>至此，一个简单的工具库搭建完毕。</p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><p>lerna：<a href="https://github.com/lerna/lerna" target="_blank" rel="noopener">https://github.com/lerna/lerna</a></p>
+<p>babel: <a href="https://babeljs.io/" target="_blank" rel="noopener">https://babeljs.io/</a></p>
+<p>rollup.js: <a href="https://www.rollupjs.com/" target="_blank" rel="noopener">https://www.rollupjs.com/</a></p>
+<p>jest: <a href="https://jestjs.io/" target="_blank" rel="noopener">https://jestjs.io/</a></p>
+
+        </div>
+
+        <div class="article-nav">
+            
+                <div class="article-prev">
+                    <a class="prev btn"
+                       rel="prev"
+                       href="/2019/11/25/%E6%8A%80%E6%9C%AF%E7%AC%94%E8%AE%B0-2019-11-25-TS%E6%B3%9B%E5%9E%8B%E7%9A%84%E4%B8%80%E4%BA%9B%E5%BA%94%E7%94%A8/"
+                    >
+                        <i class="fa fa-chevron-left"></i> <span class="post-nav-title-item">TS泛型的一些应用</span><span class="post-nav-item">上一篇</span>
+                    </a>
+                </div>
+            
+            
+                <div class="article-next">
+                    <a class="next btn"
+                       rel="next"
+                       href="/2018/10/14/%E5%9F%BA%E7%A1%80-%E9%9D%A2%E5%90%91%E5%AF%B9%E8%B1%A1%EF%BC%8C%E5%8E%9F%E5%9E%8B%E9%93%BE%EF%BC%8C%E7%BB%A7%E6%89%BF/"
+                    >
+                        <span class="post-nav-title-item">关于面向对象，原型链，继承</span><span class="post-nav-item">下一篇</span> <i class="fa fa-chevron-right"></i>
+                    </a>
+                </div>
+            
+        </div>
+
+        <div class="comment-container">
+            <div class="comments-container">
+    
+        
+    <div class="valine-container">
+        <script src='//unpkg.com/valine/dist/Valine.min.js'></script>
+        <div id="vcomments"></div>
+        <script>
+            new Valine({
+                el: '#vcomments',
+                appId: 'kVxWaAfKn5NxtpFdjinYGDW3-9Nh9j0Va',
+                appKey: 'yyChy8iJ6WEFFmLDrl2UApvQ',
+                meta: 'nick,mail,link'.split(','),
+                avatar: 'wavatar',
+                enableQQ: true,
+                placeholder: '欢迎留言',
+                lang: 'zh-CN'.toLowerCase()
+            });
+
+
+            // Valine 评论列表增加"作者"标识
+            const getValineDomTimer = setInterval(() => {
+                const vcards = document.querySelectorAll('#vcomments .vcards .vcard');
+                if (vcards.length > 0) {
+                    for (let vcard of vcards) {
+                        const vnick = vcard.querySelector('.vhead .vnick');
+                        if (vnick.innerHTML.toLocaleLowerCase() === 'Ron0115'.toLocaleLowerCase()) {
+                            vcard.classList.add('author');
+                        }
+                    }
+                    clearInterval(getValineDomTimer);
+                } else {
+                    clearInterval(getValineDomTimer);
+                }
+            }, 2000);
+        </script>
+    </div>
+
+
+    
+</div>
+        </div>
+    </div>
+</div>
+
+    <div class="article-toc-container fade-in-down-animation">
+        <div class="article-toc">
+            <div class="post-toc-wrap">
+    <div class="post-toc">
+        <ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Lerna"><span class="nav-number">2.</span> <span class="nav-text">Lerna</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#项目大致框架"><span class="nav-number">3.</span> <span class="nav-text">项目大致框架</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#搭建步骤"><span class="nav-number">3.1.</span> <span class="nav-text">搭建步骤</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#安装"><span class="nav-number">3.1.1.</span> <span class="nav-text">安装</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#初始化"><span class="nav-number">3.1.2.</span> <span class="nav-text">初始化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#配置解释"><span class="nav-number">3.1.3.</span> <span class="nav-text">配置解释</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#创建模块"><span class="nav-number">3.1.4.</span> <span class="nav-text">创建模块</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#添加依赖"><span class="nav-number">3.1.5.</span> <span class="nav-text">添加依赖</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#集成-jest"><span class="nav-number">4.</span> <span class="nav-text">集成 jest</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#jest-配置"><span class="nav-number">4.1.</span> <span class="nav-text">jest 配置</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#集成-rollup-打包"><span class="nav-number">5.</span> <span class="nav-text">集成 rollup 打包</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#rollup"><span class="nav-number">5.1.</span> <span class="nav-text">rollup</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#介绍"><span class="nav-number">5.1.1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ES-module-机制"><span class="nav-number">5.1.2.</span> <span class="nav-text">ES module 机制</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#为什么是-rollup-不是-webpack"><span class="nav-number">5.1.3.</span> <span class="nav-text">为什么是 rollup 不是 webpack</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#scripts-rollup-config-js"><span class="nav-number">5.1.4.</span> <span class="nav-text">scripts&#x2F;rollup.config.js</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Babel"><span class="nav-number">5.2.</span> <span class="nav-text">Babel</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#scripts-babel-config-js"><span class="nav-number">5.2.1.</span> <span class="nav-text">scripts&#x2F;babel.config.js</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#构建脚本"><span class="nav-number">5.3.</span> <span class="nav-text">构建脚本</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#发布"><span class="nav-number">6.</span> <span class="nav-text">发布</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">7.</span> <span class="nav-text">总结</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#参考"><span class="nav-number">7.1.</span> <span class="nav-text">参考</span></a></li></ol></li></ol>
+    </div>
+</div>
+        </div>
+    </div>
+
+
+                
+
+            </div>
+
+            
+
+        </main>
+
+        <div class="sidebar-tools">
+            <div class="tools-container">
+    <ul class="tools-list">
+        
+            <li class="search popup-trigger">
+                <i class="fa fa-search"></i>
+            </li>
+            
+<script src="/js/local-search.js"></script>
+
+        
+        <li class="mode-toggle">
+            <i class="fa fa-moon-o"></i>
+        </li>
+        
+    </ul>
+</div>
+
+        </div>
+
+        
+            <div class="scroll-to-top">
+                <ul>
+                    <li>
+                        <!--<i class="fa fa-caret-up"></i>-->
+                        <span class="scroll-percent"></span>
+                    </li>
+                </ul>
+            </div>
+        
+    </div>
+
+    <div class="page-bottom">
+        <footer class="footer">
+    <div class="info-container">
+        <div class="copyright-info info-item">
+            &copy; 2021 <i class="fa fa-heart-o"></i> <a href="/">Ron0115</a>
+        </div>
+        <div class="theme-info info-item">
+            由 <a target="_blank" href="https://hexo.io">Hexo</a> 驱动 | 主题 <a
+                    href="https://github.com/XPoet/hexo-theme-ils" target="_blank">ILS v1.2.0</a>
+        </div>
+        
+            <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+            <div class="website-count info-item">
+                
+                    <span id="busuanzi_container_site_uv" style="display: none">
+                        访问人数 <span id="busuanzi_value_site_uv"></span>
+                    </span>
+                
+                
+                    <span id="busuanzi_container_site_pv" style="display: none">
+                        总访问量 <span id="busuanzi_value_site_pv"></span>
+                    </span>
+                
+            </div>
+        
+    </div>
+</footer>
+
+    </div>
+</div>
+
+    <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+          <span class="search-icon">
+            <i class="fa fa-search"></i>
+          </span>
+            <div class="search-input-container">
+                <input autocomplete="off"
+                       autocorrect="off"
+                       autocapitalize="off"
+                       placeholder="搜索..."
+                       spellcheck="false"
+                       type="search"
+                       class="search-input"
+                >
+            </div>
+            <span class="popup-btn-close">
+                <i class="fa fa-times"></i>
+            </span>
+        </div>
+        <div id="search-result">
+            <div id="no-result">
+                <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<script src="/js/main.js"></script>
+<script src="/js/header-shrink.js"></script>
+<script src="/js/toggle-mode.js"></script>
+
+
+
+    
+<script src="/js/scroll-to-top.js"></script>
+
+
+
+
+
+    
+        
+<script src="/js/code-copy.js"></script>
+
+    
+
+    
+        
+<script src="/lib/anime.min.js"></script>
+<script src="/js/toc.js"></script>
+
+    
+
+
+
+
+</body>
+</html>

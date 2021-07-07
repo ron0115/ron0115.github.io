@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    
+    <title>
+        Ron0115
+    </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    
+        <link rel="shortcut icon" href="/favicon.ico">
+    
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <script id="hexo-configurations">
+    let CONFIG = {"hostname":"ron0115.github.io","root":"/","localsearch":{"enable":true,"trigger":"auto","unescape":false,"preload":false},"themeInfo":{"name":"ILS","version":"1.2.0","author":"XPoet","repository":"https://github.com/XPoet/hexo-theme-ils"},"codeblock":{"border_radius":null,"copy_button":{"enable":false,"show_result":false}},"path":"search.xml"};
+  </script>
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+
+<body>
+<div class="page-template">
+    <div class="page-top">
+        <header class="header-wrapper">
+
+    <div class="header-progress"></div>
+
+    <div class="header-content">
+
+        <a class="logo-title" href="/">
+            Ron0115
+        </a>
+
+        <ul class="menu-list">
+            
+                <li class="menu-item">
+                    <a class="active"
+                       href="/"
+                    >
+                        首页
+                    </a>
+                </li>
+            
+                <li class="menu-item">
+                    <a class=""
+                       href="/archives"
+                    >
+                        归档
+                    </a>
+                </li>
+            
+                <li class="menu-item">
+                    <a class=""
+                       href="/about"
+                    >
+                        关于
+                    </a>
+                </li>
+            
+        </ul>
+
+        <div class="menu-bar">
+            <div class="menu-bar-middle"></div>
+        </div>
+    </div>
+
+    <div class="header-drawer">
+        <ul class="drawer-menu-list">
+            
+                <li class="drawer-menu-item">
+                    <a class="active"
+                       href="/">首页</a>
+                </li>
+            
+                <li class="drawer-menu-item">
+                    <a class=""
+                       href="/archives">归档</a>
+                </li>
+            
+                <li class="drawer-menu-item">
+                    <a class=""
+                       href="/about">关于</a>
+                </li>
+            
+        </ul>
+    </div>
+
+    <div class="window-mask"></div>
+
+</header>
+
+
+    </div>
+
+    <div class="page-middle ">
+
+        <main class="main-content normal-code-theme">
+
+            <div class="main-content-left">
+                
+                    <div class="home-content-container fade-in-down-animation">
+    <ul class="home-article-list">
+        
+            <li class="home-article-item">
+
+                <h3 class="home-article-title">
+                    <a href="/2019/10/14/%E6%8A%80%E6%9C%AF%E7%AC%94%E8%AE%B0-2019-10-15-%E5%9C%A8%E4%B8%9A%E5%8A%A1%E5%BC%80%E5%8F%91%E4%B8%AD%E5%AE%9E%E8%B7%B5monorepo/">
+                        
+                        在业务开发中实践 monorepo
+                    </a>
+                </h3>
+
+                <div class="home-article-content markdown-body">
+                    
+                        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>有幸参加 9 月 21 日成都举办的<a href="https://fequan.com/2019/#schedule" target="_blank" rel="noopener"><code>第五届FEDAY</code></a>，其中，工程师王泽的《框架开发中的基础设施搭建》，重点介绍了白鹭引擎最新产品 Egret Pro 在 monorepo 方面的工程实践。不止白鹭引擎，目前很多大型的开源库项目，例如 vue，babel，react 等等，都采用 monorepo 去管理代码。</p>
+<p>其实，不止是大型类库，monorepo 也适用于我们实际的业务开发场景。</p>
+<p>我们通常都会将这些库拆分成多个，创建 git 仓库，打包上传 npm，这样貌似没有什么问题。</p>
+<p>但是当库与库之间产生依赖的时候，问题就暴露出来，修改一个库，依赖它的库也要相应更新版本号，重新发包。当库越来越多，关系越来越复杂，这个维护的过程就相当头痛。</p>
+<p>这个时候，Lerna 正好符合这样的场景。</p>
+                    
+                </div>
+
+                <div class="home-article-meta-info">
+                    <div class="article-date">
+                        <span><i class="fa fa-pencil-square-o"></i> 2019-10-14</span>
+                        
+                            <span>
+                            <i class="fa fa-folder"></i>
+                            <ul>
+                                
+                                    <li><a
+                                                href="/categories/FrontEnd/">FrontEnd</a></li>
+                                
+                            </ul>
+                        </span>
+                        
+                    </div>
+                    
+                    <a href="/2019/10/14/%E6%8A%80%E6%9C%AF%E7%AC%94%E8%AE%B0-2019-10-15-%E5%9C%A8%E4%B8%9A%E5%8A%A1%E5%BC%80%E5%8F%91%E4%B8%AD%E5%AE%9E%E8%B7%B5monorepo/">阅读全文 <i class="fa fa-angle-right"></i></a>
+                </div>
+            </li>
+        
+            <li class="home-article-item">
+
+                <h3 class="home-article-title">
+                    <a href="/2018/10/14/%E5%9F%BA%E7%A1%80-%E9%9D%A2%E5%90%91%E5%AF%B9%E8%B1%A1%EF%BC%8C%E5%8E%9F%E5%9E%8B%E9%93%BE%EF%BC%8C%E7%BB%A7%E6%89%BF/">
+                        
+                        关于面向对象，原型链，继承
+                    </a>
+                </h3>
+
+                <div class="home-article-content markdown-body">
+                    
+                        <p><a name="zjSOR"></a></p>
+<h1 id="关于-JS-如何实现面向对象"><a href="#关于-JS-如何实现面向对象" class="headerlink" title="关于 JS 如何实现面向对象"></a>关于 JS 如何实现面向对象</h1><p><br />先看看官方如何解释：<br /></p>
+<blockquote>
+<p><a href="https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Inheritance_and_the_prototype_chain" target="_blank" rel="noopener">https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Inheritance_and_the_prototype_chain</a> &gt; <br /><br>对于使用过基于类的语言 (如 Java 或 C++) 的开发人员来说，JavaScript 有点令人困惑，因为它是动态的，并且本身不提供一个  <code>class</code>  实现。（<strong>在 ES2015/ES6 中引入了  <code>class</code>  关键字，但那只是语法糖，JavaScript 仍然是基于原型的</strong>）。</p>
+</blockquote>
+<blockquote>
+<p>当谈到继承时，JavaScript 只有一种结构：对象。每个实例对象（ object ）都有一个私有属性（称之为 <strong>proto</strong> ）指向它的构造函数的原型对象（<strong>prototype *<em>）。该原型对象也有一个自己的原型对象( *</em>proto</strong> ) ，层层向上直到一个对象的原型对象为  <code>null</code>。根据定义，<code>null</code>  没有原型，并作为这个<strong>原型链</strong>中的最后一个环节。</p>
+</blockquote>
+<blockquote>
+<p>几乎所有 JavaScript 中的对象都是位于原型链顶端的 <code>Object</code>  的实例。</p>
+</blockquote>
+<blockquote>
+<p>尽管这种原型继承通常被认为是 JavaScript 的弱点之一，但是原型继承模型本身实际上比经典模型更强大。<strong>例如，在原型模型的基础上构建经典模型相当简单。</strong></p>
+</blockquote>
+                    
+                </div>
+
+                <div class="home-article-meta-info">
+                    <div class="article-date">
+                        <span><i class="fa fa-pencil-square-o"></i> 2018-10-14</span>
+                        
+                            <span>
+                            <i class="fa fa-folder"></i>
+                            <ul>
+                                
+                                    <li><a
+                                                href="/categories/FrontEnd/">FrontEnd</a></li>
+                                
+                            </ul>
+                        </span>
+                        
+                    </div>
+                    
+                    <a href="/2018/10/14/%E5%9F%BA%E7%A1%80-%E9%9D%A2%E5%90%91%E5%AF%B9%E8%B1%A1%EF%BC%8C%E5%8E%9F%E5%9E%8B%E9%93%BE%EF%BC%8C%E7%BB%A7%E6%89%BF/">阅读全文 <i class="fa fa-angle-right"></i></a>
+                </div>
+            </li>
+        
+    </ul>
+
+    <div class="home-paginator">
+        <div class="paginator">
+    
+        <a class="prev btn"
+           href="/"
+        >上一页</a>
+    
+
+    
+</div>
+
+    </div>
+</div>
+
+
+                
+
+            </div>
+
+            
+
+        </main>
+
+        <div class="sidebar-tools">
+            <div class="tools-container">
+    <ul class="tools-list">
+        
+            <li class="search popup-trigger">
+                <i class="fa fa-search"></i>
+            </li>
+            
+<script src="/js/local-search.js"></script>
+
+        
+        <li class="mode-toggle">
+            <i class="fa fa-moon-o"></i>
+        </li>
+        
+    </ul>
+</div>
+
+        </div>
+
+        
+            <div class="scroll-to-top">
+                <ul>
+                    <li>
+                        <!--<i class="fa fa-caret-up"></i>-->
+                        <span class="scroll-percent"></span>
+                    </li>
+                </ul>
+            </div>
+        
+    </div>
+
+    <div class="page-bottom">
+        <footer class="footer">
+    <div class="info-container">
+        <div class="copyright-info info-item">
+            &copy; 2021 <i class="fa fa-heart-o"></i> <a href="/">Ron0115</a>
+        </div>
+        <div class="theme-info info-item">
+            由 <a target="_blank" href="https://hexo.io">Hexo</a> 驱动 | 主题 <a
+                    href="https://github.com/XPoet/hexo-theme-ils" target="_blank">ILS v1.2.0</a>
+        </div>
+        
+            <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+            <div class="website-count info-item">
+                
+                    <span id="busuanzi_container_site_uv" style="display: none">
+                        访问人数 <span id="busuanzi_value_site_uv"></span>
+                    </span>
+                
+                
+                    <span id="busuanzi_container_site_pv" style="display: none">
+                        总访问量 <span id="busuanzi_value_site_pv"></span>
+                    </span>
+                
+            </div>
+        
+    </div>
+</footer>
+
+    </div>
+</div>
+
+    <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+          <span class="search-icon">
+            <i class="fa fa-search"></i>
+          </span>
+            <div class="search-input-container">
+                <input autocomplete="off"
+                       autocorrect="off"
+                       autocapitalize="off"
+                       placeholder="搜索..."
+                       spellcheck="false"
+                       type="search"
+                       class="search-input"
+                >
+            </div>
+            <span class="popup-btn-close">
+                <i class="fa fa-times"></i>
+            </span>
+        </div>
+        <div id="search-result">
+            <div id="no-result">
+                <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<script src="/js/main.js"></script>
+<script src="/js/header-shrink.js"></script>
+<script src="/js/toggle-mode.js"></script>
+
+
+
+    
+<script src="/js/scroll-to-top.js"></script>
+
+
+
+
+
+
+</body>
+</html>

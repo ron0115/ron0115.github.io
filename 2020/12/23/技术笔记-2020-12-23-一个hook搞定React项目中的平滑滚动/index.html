@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    
+    <title>
+        一个hook搞定React项目中的平滑滚动 | Ron0115
+    </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    
+        <link rel="shortcut icon" href="/favicon.ico">
+    
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <script id="hexo-configurations">
+    let CONFIG = {"hostname":"ron0115.github.io","root":"/","localsearch":{"enable":true,"trigger":"auto","unescape":false,"preload":false},"themeInfo":{"name":"ILS","version":"1.2.0","author":"XPoet","repository":"https://github.com/XPoet/hexo-theme-ils"},"codeblock":{"border_radius":null,"copy_button":{"enable":false,"show_result":false}},"path":"search.xml"};
+  </script>
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+
+<body>
+<div class="page-template">
+    <div class="page-top">
+        <header class="header-wrapper">
+
+    <div class="header-progress"></div>
+
+    <div class="header-content">
+
+        <a class="logo-title" href="/">
+            Ron0115
+        </a>
+
+        <ul class="menu-list">
+            
+                <li class="menu-item">
+                    <a class=""
+                       href="/"
+                    >
+                        首页
+                    </a>
+                </li>
+            
+                <li class="menu-item">
+                    <a class=""
+                       href="/archives"
+                    >
+                        归档
+                    </a>
+                </li>
+            
+                <li class="menu-item">
+                    <a class=""
+                       href="/about"
+                    >
+                        关于
+                    </a>
+                </li>
+            
+        </ul>
+
+        <div class="menu-bar">
+            <div class="menu-bar-middle"></div>
+        </div>
+    </div>
+
+    <div class="header-drawer">
+        <ul class="drawer-menu-list">
+            
+                <li class="drawer-menu-item">
+                    <a class=""
+                       href="/">首页</a>
+                </li>
+            
+                <li class="drawer-menu-item">
+                    <a class=""
+                       href="/archives">归档</a>
+                </li>
+            
+                <li class="drawer-menu-item">
+                    <a class=""
+                       href="/about">关于</a>
+                </li>
+            
+        </ul>
+    </div>
+
+    <div class="window-mask"></div>
+
+</header>
+
+
+    </div>
+
+    <div class="page-middle ">
+
+        <main class="main-content normal-code-theme">
+
+            <div class="main-content-left">
+                
+                    <div class="fade-in-down-animation">
+    <div class="article-content-container">
+
+        <div class="article-title">
+            <h3><a class="title-hover-animation">一个hook搞定React项目中的平滑滚动</a></h3>
+        </div>
+
+        <div class="meta-info">
+            <div class="article-meta-info">
+    <span class="article-date article-meta-item">
+        <i class="fa fa-calendar-o"></i> 2020-12-23 00:00:00
+    </span>
+    
+        <span class="article-categories article-meta-item">
+            <i class="fa fa-folder"></i>
+            <ul>
+                
+                    <li>
+                        <a href="/categories/FrontEnd/">FrontEnd</a>
+                    </li>
+                
+            </ul>
+        </span>
+    
+    
+        <span class="article-tags article-meta-item">
+            <i class="fa fa-tags"></i>
+            <ul>
+                
+                    <li>
+                        <a href="/tags/Javascript/">Javascript</a>
+                    </li>
+                
+                    <li>
+                        | <a href="/tags/React/">React</a>
+                    </li>
+                
+            </ul>
+        </span>
+    
+    
+        <span class="article-pv article-meta-item">
+            <i class="fa fa-eye"></i> <span id="busuanzi_value_page_pv"></span>
+        </span>
+    
+    
+    
+</div>
+
+        </div>
+
+        <div class="article-content markdown-body">
+            <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>如果你的项目没有引入 jquery，但是又想方便地控制滚动条，这时候，<a href="https://github.com/ron0115/react-smooth-scroll-hook" target="_blank" rel="noopener">react-smooth-scroll-hoook</a>可能会帮上忙。</p>
+<h1 id="useSmoothScroll"><a href="#useSmoothScroll" class="headerlink" title="useSmoothScroll"></a>useSmoothScroll</h1><h2 id="用法"><a href="#用法" class="headerlink" title="用法"></a>用法</h2><p>useSmoothScroll 核心在于 scrollTo 方法，可传入目标节点或者滚动距离，以自定义的速度滚动到该节点。</p>
+<a id="more"></a>
+
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> Demo = <span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">const</span> ref = useRef &lt; HTMLDivElement &gt; <span class="literal">null</span></span><br><span class="line">  <span class="keyword">const</span> &#123; scrollTo &#125; = useSmoothScroll(&#123;</span><br><span class="line">    ref</span><br><span class="line">  &#125;)</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> (</span><br><span class="line">    &lt;&gt;</span><br><span class="line">      &lt;button onClick=&#123;() =&gt; scrollTo(<span class="string">'#y-item-20'</span>)&#125;&gt;</span><br><span class="line">        scrollTo(<span class="string">'#y-item-20'</span>)</span><br><span class="line">      &lt;<span class="regexp">/button&gt;</span></span><br><span class="line"><span class="regexp">      &lt;button onClick=&#123;() =&gt; scrollTo(400)&#125;&gt;scrollTo(400)&lt;/</span>button&gt;</span><br><span class="line"></span><br><span class="line">      &lt;div</span><br><span class="line">        id=&#123;<span class="string">'demo-stories'</span>&#125;</span><br><span class="line">        ref=&#123;ref&#125;</span><br><span class="line">        style=&#123;&#123;</span><br><span class="line">          overflowY: <span class="string">'scroll'</span>,</span><br><span class="line">          maxHeight: <span class="string">'200px'</span>,</span><br><span class="line">          padding: <span class="string">'10px'</span></span><br><span class="line">        &#125;&#125;</span><br><span class="line">      &gt;</span><br><span class="line">        &#123;<span class="built_in">Array</span>(<span class="number">100</span>)</span><br><span class="line">          .fill(<span class="literal">null</span>)</span><br><span class="line">          .map(<span class="function">(<span class="params">_item, i</span>) =&gt;</span> (</span><br><span class="line">            &lt;div key=&#123;i&#125; id=&#123;<span class="string">`y-item-<span class="subst">$&#123;i&#125;</span>`</span>&#125;&gt;</span><br><span class="line">              y-item-&#123;i&#125;</span><br><span class="line">            &lt;<span class="regexp">/div&gt;</span></span><br><span class="line"><span class="regexp">          ))&#125;</span></span><br><span class="line"><span class="regexp">      &lt;/</span>div&gt;</span><br><span class="line">    &lt;<span class="regexp">/&gt;</span></span><br><span class="line"><span class="regexp">  )</span></span><br><span class="line"><span class="regexp">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Demo"><a href="#Demo" class="headerlink" title="Demo"></a>Demo</h3><ul>
+<li><strong><a href="https://codesandbox.io/s/usesmoothscroll-2zt20?file=/Body.stories.tsx" target="_blank" rel="noopener">CodeSandbox</a></strong></li>
+<li><strong><a href="https://ron0115.github.io/react-smooth-scroll-hook/?path=/docs/main-usesmoothscroll--docs">Storybook</a></strong></li>
+</ul>
+<h2 id="核心调用：requestAnimationFrame"><a href="#核心调用：requestAnimationFrame" class="headerlink" title="核心调用：requestAnimationFrame"></a>核心调用：requestAnimationFrame</h2><h3 id="浏览器事件循环"><a href="#浏览器事件循环" class="headerlink" title="浏览器事件循环"></a>浏览器事件循环</h3><p>宏任务 =&gt; 微任务 =&gt; 重绘前执行rAF callback =&gt; GUI线程渲染</p>
+<h3 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h3><p>是一个特别的异步任务，只是注册的方法不加入异步队列，而是加入渲染这一边的队列中，它在渲染的三个步骤之前被执行。通常用来处理渲染相关的工作。</p>
+<ul>
+<li>下次重绘之前执行，处于渲染循环的任务队列中，不属于宏任务或者微任务</li>
+<li>跟随浏览器的刷新频率</li>
+<li>非激活状态，动画暂停，节省性能开销。</li>
+<li>由系统来决定回调函数的执行时机, 如果屏幕刷新率是60Hz,那么回调函数就每16.7ms被执行一次，防止丢帧</li>
+<li>位于渲染队列，执行在微任务之后，下一个宏任务之前。</li>
+</ul>
+<h3 id="rAF的意义和作用"><a href="#rAF的意义和作用" class="headerlink" title="rAF的意义和作用"></a>rAF的意义和作用</h3><ul>
+<li>使用递归结合rAF实现transition或者animation动画。</li>
+<li>弥补CSS3动画的一些缺陷，如不能做scrollTop的平滑滚动。</li>
+<li>CSS3只支持部分曲线方程，需要自动以的话只能使用js动画解决即rAF。</li>
+<li>利用递归入渲染队列的任务，间隔时间根据重绘的频率而定，防止了定时器过快导致掉帧，过慢导致卡顿。</li>
+</ul>
+<h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><ol>
+<li>初始化容器 dom 节点</li>
+<li>监听滚动条的状态，如滚动条是否触达容器的两端。</li>
+<li>scrollTo 方法：通过 requestAnimationFrame 去设置容器的 scrollLeft/scrollTop，直到滚动到目标位置。<h2 id="处理细节"><a href="#处理细节" class="headerlink" title="处理细节"></a>处理细节</h2><h3 id="传入目标节点，计算滚动距离"><a href="#传入目标节点，计算滚动距离" class="headerlink" title="传入目标节点，计算滚动距离"></a>传入目标节点，计算滚动距离</h3></li>
+</ol>
+<ul>
+<li>如果滚动容器是根元素 html 或者 body，那么直接取当前目标节点的上边距（getBoundingClientRect().top/left）,否则，还要减去父容器的上边距。</li>
+<li>使用<code>requestAnimationFrame</code>，递归执行滚动条位移，设置滚动终点，终止递归。</li>
+</ul>
+<h3 id="事件监听"><a href="#事件监听" class="headerlink" title="事件监听"></a>事件监听</h3><ul>
+<li>监听滚动条的属性变化，更新滚动容器的大小。</li>
+<li>监听窗口的 resize 事件，更新滚动容器的大小。</li>
+<li>监听滚动容器内子元素的 dom 变化，更新滚动条位置状态。</li>
+<li>监听容器的 scroll 事件，更新滚动条位置状态。</li>
+</ul>
+<h1 id="useScrollWatch"><a href="#useScrollWatch" class="headerlink" title="useScrollWatch"></a>useScrollWatch</h1><h2 id="用法-1"><a href="#用法-1" class="headerlink" title="用法"></a>用法</h2><p>useScrollWatch 用于解决类似导航栏定位的问题，可以获取当前滚动条位于传入 list 节点数组中的哪个节点。</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> ScrollConatainerMode = <span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">const</span> ref = useRef &lt; HTMLDivElement &gt; <span class="literal">null</span></span><br><span class="line">  <span class="keyword">const</span> &#123; scrollTop, curIndex, curItem &#125; = useScrollWatch(&#123;</span><br><span class="line">    ref,</span><br><span class="line">    list: [</span><br><span class="line">      &#123;</span><br><span class="line">        href: <span class="string">'#item-0'</span></span><br><span class="line">      &#125;,</span><br><span class="line">      &#123;</span><br><span class="line">        href: <span class="string">'#item-10'</span></span><br><span class="line">      &#125;,</span><br><span class="line">      &#123;</span><br><span class="line">        href: <span class="string">'#item-20'</span></span><br><span class="line">      &#125;</span><br><span class="line">    ],</span><br><span class="line">    offset: <span class="number">-10</span></span><br><span class="line">  &#125;)</span><br><span class="line">  <span class="keyword">return</span> (</span><br><span class="line">    &lt;&gt;</span><br><span class="line">      &lt;h2&gt;Scroll Container Mode&lt;<span class="regexp">/h2&gt;</span></span><br><span class="line"><span class="regexp">      &lt;div&gt;</span></span><br><span class="line"><span class="regexp">        &lt;p&gt;</span></span><br><span class="line"><span class="regexp">          &lt;strong&gt;scrollTop:&lt;/</span>strong&gt; &#123;scrollTop&#125;</span><br><span class="line">        &lt;<span class="regexp">/p&gt;</span></span><br><span class="line"><span class="regexp">        &lt;p&gt;</span></span><br><span class="line"><span class="regexp">          &lt;strong&gt;curIndex:&lt;/</span>strong&gt; &#123;curIndex&#125;</span><br><span class="line">        &lt;<span class="regexp">/p&gt;</span></span><br><span class="line"><span class="regexp">        &lt;p&gt;</span></span><br><span class="line"><span class="regexp">          &lt;strong&gt;curHref:&lt;/</span>strong&gt; &#123;curItem?.href&#125;</span><br><span class="line">        &lt;<span class="regexp">/p&gt;</span></span><br><span class="line"><span class="regexp">      &lt;/</span>div&gt;</span><br><span class="line">      &lt;div</span><br><span class="line">        style=&#123;&#123;</span><br><span class="line">          padding: <span class="string">'10px'</span>,</span><br><span class="line">          maxHeight: <span class="string">'200px'</span>,</span><br><span class="line">          overflowY: <span class="string">'scroll'</span></span><br><span class="line">        &#125;&#125;</span><br><span class="line">        ref=&#123;ref&#125;</span><br><span class="line">      &gt;</span><br><span class="line">        &#123;<span class="built_in">Array</span>(<span class="number">100</span>)</span><br><span class="line">          .fill(<span class="literal">null</span>)</span><br><span class="line">          .map(<span class="function">(<span class="params">_item, i</span>) =&gt;</span> (</span><br><span class="line">            &lt;div key=&#123;i&#125; id=&#123;<span class="string">`item-<span class="subst">$&#123;i&#125;</span>`</span>&#125;&gt;</span><br><span class="line">              item-&#123;i&#125;</span><br><span class="line">            &lt;<span class="regexp">/div&gt;</span></span><br><span class="line"><span class="regexp">          ))&#125;</span></span><br><span class="line"><span class="regexp">      &lt;/</span>div&gt;</span><br><span class="line">    &lt;<span class="regexp">/&gt;</span></span><br><span class="line"><span class="regexp">  )</span></span><br><span class="line"><span class="regexp">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Demo-1"><a href="#Demo-1" class="headerlink" title="Demo"></a>Demo</h3><ul>
+<li><strong><a href="https://codesandbox.io/s/gifted-field-5b3ui?file=/UseScrollWatch.stories.tsx:9-24" target="_blank" rel="noopener">CodeSandbox</a></strong></li>
+<li><strong><a href="https://ron0115.github.io/react-smooth-scroll-hook/?path=/docs/more-usescrollwatch--docs">Storybook</a></strong></li>
+</ul>
+<h2 id="原理-1"><a href="#原理-1" class="headerlink" title="原理"></a>原理</h2><ol>
+<li>初始化节点 list</li>
+<li>监听 scroll 事件和子元素的变化，根据滚动条当前的位置，计算出当前滚动条位于 list 中的哪个节点。</li>
+</ol>
+<h2 id="处理细节-1"><a href="#处理细节-1" class="headerlink" title="处理细节"></a>处理细节</h2><ul>
+<li>需要注意，滚动条的初始点不是父容器的顶部，而是父容器下第一个子元素的顶部（即需要考虑内边距对滚动容器起点的影响）</li>
+</ul>
+<h1 id="搭建文档"><a href="#搭建文档" class="headerlink" title="搭建文档"></a>搭建文档</h1><h2 id="生成参数表格"><a href="#生成参数表格" class="headerlink" title="生成参数表格"></a>生成参数表格</h2><p>使用 storybook，集成 <code>react-docgen-typescript-loader</code> ，轻松通过 TS 类型自动生成文档。具体配置如下见<a href="https://github.com/ron0115/react-smooth-scroll-hook/blob/master/.storybook/main.js" target="_blank" rel="noopener">*<em><code>.storybook/main.js</code> *</em></a><br>**</p>
+<h2 id="将-stories-文件用于-CodeSandbox"><a href="#将-stories-文件用于-CodeSandbox" class="headerlink" title="将 stories 文件用于 CodeSandbox"></a>将 stories 文件用于 CodeSandbox</h2><p>我们可以将文档展示的 demo 一起用于 codesandbox 展示，具体见 <a href="https://github.com/ron0115/react-smooth-scroll-hook/tree/master/example" target="_blank" rel="noopener"><code>./example</code> </a></p>
+<h1 id="编写测试"><a href="#编写测试" class="headerlink" title="编写测试"></a>编写测试</h1><h2 id="单元测试"><a href="#单元测试" class="headerlink" title="单元测试"></a>单元测试</h2><p>为工具方法编写单元测试，具体见 <a href="https://github.com/ron0115/react-smooth-scroll-hook/tree/master/test/specs" target="_blank" rel="noopener"><code>./test/specs</code> </a>，执行 test 命令</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tsdx <span class="built_in">test</span> --passWithNoTests --config jest.unit.config.js</span><br></pre></td></tr></table></figure>
+
+<h2 id="e2e-测试"><a href="#e2e-测试" class="headerlink" title="e2e 测试"></a>e2e 测试</h2><p>对于组件渲染或者强交互的组件，我们需要通过端到端测试模拟，摆脱人工测试，实现自动化。具体见 <a href="https://github.com/ron0115/react-smooth-scroll-hook/tree/master/test/e2e" target="_blank" rel="noopener"><code>./test/e2e</code> </a></p>
+<h3 id="测试滚动的有效性"><a href="#测试滚动的有效性" class="headerlink" title="测试滚动的有效性"></a>测试滚动的有效性</h3><p>我们通过到列表中的某个元素后，如果该元素的上一个元素在视口中不可见，确定滚动的有效性。</p>
+<p>经过文档的查阅，我使用了 <a href="https://github.com/puppeteer/puppeteer/blob/main/docs/api.md#elementhandleisintersectingviewport" target="_blank" rel="noopener"><code>isIntersectingViewport</code></a>  这个方法，通过该方法，可以判断某个元素是否真正离开屏幕或者在视口中不可见。</p>
+<h4 id="isIntersectingViewport-的缺陷"><a href="#isIntersectingViewport-的缺陷" class="headerlink" title="isIntersectingViewport 的缺陷"></a>isIntersectingViewport 的缺陷</h4><p>在这个过程中，我重写了官方的 <code>isIntersectingViewport</code>  方法，让其支持传入一个误差值。</p>
+<p>为什么呢？由于滑动的距离是通过运算得出的，无可避免地产生了精度问题，导致某元素即使表面上完全不可见了，却由于精度问题， <code>isIntersectingViewport</code>  返回了错误的判断(例如期望值是 0，可能返回 0.000000001)。</p>
+<p>以下为重写代码，可以重点关注增加的 <code>threshold</code> ，传入后 最终的显示比例会加上这个值进行精度修正。</p>
+<blockquote>
+<p>该问题已经向 puppetter 提交了 pr，但尚未处理。<a href="https://github.com/puppeteer/puppeteer/pull/6497" target="_blank" rel="noopener">https://github.com/puppeteer/puppeteer/pull/6497</a></p>
+</blockquote>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">async</span> <span class="function"><span class="keyword">function</span> <span class="title">isIntersectingViewport</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">  elm: ElementHandle&lt;Element&gt;,</span></span></span><br><span class="line"><span class="function"><span class="params">  options?: &#123;</span></span></span><br><span class="line"><span class="function"><span class="params">    threshold?: <span class="built_in">number</span></span></span></span><br><span class="line"><span class="function"><span class="params">  &#125;</span></span></span><br><span class="line"><span class="function"><span class="params"></span>): <span class="title">Promise</span>&lt;<span class="title">boolean</span>&gt; </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">await</span> elm.evaluate&lt;<span class="function">(<span class="params">element: Element, options</span>) =&gt;</span> <span class="built_in">Promise</span>&lt;<span class="built_in">boolean</span>&gt;&gt;(</span><br><span class="line">    <span class="comment">// 注意：回调函数在浏览器中执行，不能获取node中的变量</span></span><br><span class="line">    <span class="keyword">async</span> (element, options) =&gt; &#123;</span><br><span class="line">      <span class="keyword">const</span> &#123; threshold = <span class="number">0</span> &#125; = options || &#123;&#125;</span><br><span class="line">      <span class="keyword">const</span> visibleRatio = <span class="keyword">await</span> <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function">(<span class="params">resolve</span>) =&gt;</span> &#123;</span><br><span class="line">        <span class="keyword">const</span> observer = <span class="keyword">new</span> IntersectionObserver(<span class="function">(<span class="params">entries</span>) =&gt;</span> &#123;</span><br><span class="line">          resolve(entries[<span class="number">0</span>].intersectionRatio)</span><br><span class="line">          observer.disconnect()</span><br><span class="line">        &#125;)</span><br><span class="line">        observer.observe(element)</span><br><span class="line">      &#125;)</span><br><span class="line">      <span class="keyword">return</span> <span class="built_in">Number</span>(visibleRatio) + threshold &gt; <span class="number">0</span></span><br><span class="line">    &#125;,</span><br><span class="line">    options</span><br><span class="line">  )</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在这里，我们在使用 puppeteer 提供的 api 的时候，需要注意，回调函数在浏览器环境下执行，而不是在 node 环境下，所以两边的环境变量不一样，是不能相互读取的。</p>
+<h1 id="发布"><a href="#发布" class="headerlink" title="发布"></a>发布</h1><p>使用 github-action 完成发布，具体<a href="https://github.com/ron0115/react-smooth-scroll-hook/tree/master/.github/workflows" target="_blank" rel="noopener">脚本</a>，流程如下：</p>
+<ul>
+<li><a href="https://github.com/ron0115/react-smooth-scroll-hook/blob/master/.github/workflows/storybook.yml#L6" target="_blank" rel="noopener">storybook.yml</a>：在 <code>stories/**</code>  和 <code>example.**</code>  或者 <code>Reame.md</code>  发生变更的时候，我们执行文档发布作业。</li>
+<li><a href="https://github.com/ron0115/react-smooth-scroll-hook/blob/master/.github/workflows/release.yml#L6" target="_blank" rel="noopener">release.yml</a>: 在 <code>src/**</code>  源码发生变更的时候，我们执行 npm 发布和文档发布作业。</li>
+</ul>
+
+        </div>
+
+        <div class="article-nav">
+            
+            
+                <div class="article-next">
+                    <a class="next btn"
+                       rel="next"
+                       href="/2020/10/22/%E6%8A%80%E6%9C%AF%E7%AC%94%E8%AE%B0-2020-10-23-%E5%85%B3%E4%BA%8ETS%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E9%AB%98%E9%98%B6%E5%87%BD%E6%95%B0/"
+                    >
+                        <span class="post-nav-title-item">关于TS中如何处理高阶函数</span><span class="post-nav-item">下一篇</span> <i class="fa fa-chevron-right"></i>
+                    </a>
+                </div>
+            
+        </div>
+
+        <div class="comment-container">
+            <div class="comments-container">
+    
+        
+    <div class="valine-container">
+        <script src='//unpkg.com/valine/dist/Valine.min.js'></script>
+        <div id="vcomments"></div>
+        <script>
+            new Valine({
+                el: '#vcomments',
+                appId: 'kVxWaAfKn5NxtpFdjinYGDW3-9Nh9j0Va',
+                appKey: 'yyChy8iJ6WEFFmLDrl2UApvQ',
+                meta: 'nick,mail,link'.split(','),
+                avatar: 'wavatar',
+                enableQQ: true,
+                placeholder: '欢迎留言',
+                lang: 'zh-CN'.toLowerCase()
+            });
+
+
+            // Valine 评论列表增加"作者"标识
+            const getValineDomTimer = setInterval(() => {
+                const vcards = document.querySelectorAll('#vcomments .vcards .vcard');
+                if (vcards.length > 0) {
+                    for (let vcard of vcards) {
+                        const vnick = vcard.querySelector('.vhead .vnick');
+                        if (vnick.innerHTML.toLocaleLowerCase() === 'Ron0115'.toLocaleLowerCase()) {
+                            vcard.classList.add('author');
+                        }
+                    }
+                    clearInterval(getValineDomTimer);
+                } else {
+                    clearInterval(getValineDomTimer);
+                }
+            }, 2000);
+        </script>
+    </div>
+
+
+    
+</div>
+        </div>
+    </div>
+</div>
+
+    <div class="article-toc-container fade-in-down-animation">
+        <div class="article-toc">
+            <div class="post-toc-wrap">
+    <div class="post-toc">
+        <ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#useSmoothScroll"><span class="nav-number">2.</span> <span class="nav-text">useSmoothScroll</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#用法"><span class="nav-number">2.1.</span> <span class="nav-text">用法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Demo"><span class="nav-number">2.1.1.</span> <span class="nav-text">Demo</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#核心调用：requestAnimationFrame"><span class="nav-number">2.2.</span> <span class="nav-text">核心调用：requestAnimationFrame</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#浏览器事件循环"><span class="nav-number">2.2.1.</span> <span class="nav-text">浏览器事件循环</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#概念"><span class="nav-number">2.2.2.</span> <span class="nav-text">概念</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#rAF的意义和作用"><span class="nav-number">2.2.3.</span> <span class="nav-text">rAF的意义和作用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#原理"><span class="nav-number">2.3.</span> <span class="nav-text">原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#处理细节"><span class="nav-number">2.4.</span> <span class="nav-text">处理细节</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#传入目标节点，计算滚动距离"><span class="nav-number">2.4.1.</span> <span class="nav-text">传入目标节点，计算滚动距离</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#事件监听"><span class="nav-number">2.4.2.</span> <span class="nav-text">事件监听</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#useScrollWatch"><span class="nav-number">3.</span> <span class="nav-text">useScrollWatch</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#用法-1"><span class="nav-number">3.1.</span> <span class="nav-text">用法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Demo-1"><span class="nav-number">3.1.1.</span> <span class="nav-text">Demo</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#原理-1"><span class="nav-number">3.2.</span> <span class="nav-text">原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#处理细节-1"><span class="nav-number">3.3.</span> <span class="nav-text">处理细节</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#搭建文档"><span class="nav-number">4.</span> <span class="nav-text">搭建文档</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#生成参数表格"><span class="nav-number">4.1.</span> <span class="nav-text">生成参数表格</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#将-stories-文件用于-CodeSandbox"><span class="nav-number">4.2.</span> <span class="nav-text">将 stories 文件用于 CodeSandbox</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#编写测试"><span class="nav-number">5.</span> <span class="nav-text">编写测试</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#单元测试"><span class="nav-number">5.1.</span> <span class="nav-text">单元测试</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#e2e-测试"><span class="nav-number">5.2.</span> <span class="nav-text">e2e 测试</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#测试滚动的有效性"><span class="nav-number">5.2.1.</span> <span class="nav-text">测试滚动的有效性</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#isIntersectingViewport-的缺陷"><span class="nav-number">5.2.1.1.</span> <span class="nav-text">isIntersectingViewport 的缺陷</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#发布"><span class="nav-number">6.</span> <span class="nav-text">发布</span></a></li></ol>
+    </div>
+</div>
+        </div>
+    </div>
+
+
+                
+
+            </div>
+
+            
+
+        </main>
+
+        <div class="sidebar-tools">
+            <div class="tools-container">
+    <ul class="tools-list">
+        
+            <li class="search popup-trigger">
+                <i class="fa fa-search"></i>
+            </li>
+            
+<script src="/js/local-search.js"></script>
+
+        
+        <li class="mode-toggle">
+            <i class="fa fa-moon-o"></i>
+        </li>
+        
+    </ul>
+</div>
+
+        </div>
+
+        
+            <div class="scroll-to-top">
+                <ul>
+                    <li>
+                        <!--<i class="fa fa-caret-up"></i>-->
+                        <span class="scroll-percent"></span>
+                    </li>
+                </ul>
+            </div>
+        
+    </div>
+
+    <div class="page-bottom">
+        <footer class="footer">
+    <div class="info-container">
+        <div class="copyright-info info-item">
+            &copy; 2021 <i class="fa fa-heart-o"></i> <a href="/">Ron0115</a>
+        </div>
+        <div class="theme-info info-item">
+            由 <a target="_blank" href="https://hexo.io">Hexo</a> 驱动 | 主题 <a
+                    href="https://github.com/XPoet/hexo-theme-ils" target="_blank">ILS v1.2.0</a>
+        </div>
+        
+            <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+            <div class="website-count info-item">
+                
+                    <span id="busuanzi_container_site_uv" style="display: none">
+                        访问人数 <span id="busuanzi_value_site_uv"></span>
+                    </span>
+                
+                
+                    <span id="busuanzi_container_site_pv" style="display: none">
+                        总访问量 <span id="busuanzi_value_site_pv"></span>
+                    </span>
+                
+            </div>
+        
+    </div>
+</footer>
+
+    </div>
+</div>
+
+    <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+          <span class="search-icon">
+            <i class="fa fa-search"></i>
+          </span>
+            <div class="search-input-container">
+                <input autocomplete="off"
+                       autocorrect="off"
+                       autocapitalize="off"
+                       placeholder="搜索..."
+                       spellcheck="false"
+                       type="search"
+                       class="search-input"
+                >
+            </div>
+            <span class="popup-btn-close">
+                <i class="fa fa-times"></i>
+            </span>
+        </div>
+        <div id="search-result">
+            <div id="no-result">
+                <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<script src="/js/main.js"></script>
+<script src="/js/header-shrink.js"></script>
+<script src="/js/toggle-mode.js"></script>
+
+
+
+    
+<script src="/js/scroll-to-top.js"></script>
+
+
+
+
+
+    
+        
+<script src="/js/code-copy.js"></script>
+
+    
+
+    
+        
+<script src="/lib/anime.min.js"></script>
+<script src="/js/toc.js"></script>
+
+    
+
+
+
+
+</body>
+</html>

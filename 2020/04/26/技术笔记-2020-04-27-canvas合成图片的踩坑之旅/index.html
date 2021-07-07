@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    
+    <title>
+        canvas合成图片的踩坑之旅 | Ron0115
+    </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    
+        <link rel="shortcut icon" href="/favicon.ico">
+    
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <script id="hexo-configurations">
+    let CONFIG = {"hostname":"ron0115.github.io","root":"/","localsearch":{"enable":true,"trigger":"auto","unescape":false,"preload":false},"themeInfo":{"name":"ILS","version":"1.2.0","author":"XPoet","repository":"https://github.com/XPoet/hexo-theme-ils"},"codeblock":{"border_radius":null,"copy_button":{"enable":false,"show_result":false}},"path":"search.xml"};
+  </script>
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+
+<body>
+<div class="page-template">
+    <div class="page-top">
+        <header class="header-wrapper">
+
+    <div class="header-progress"></div>
+
+    <div class="header-content">
+
+        <a class="logo-title" href="/">
+            Ron0115
+        </a>
+
+        <ul class="menu-list">
+            
+                <li class="menu-item">
+                    <a class=""
+                       href="/"
+                    >
+                        首页
+                    </a>
+                </li>
+            
+                <li class="menu-item">
+                    <a class=""
+                       href="/archives"
+                    >
+                        归档
+                    </a>
+                </li>
+            
+                <li class="menu-item">
+                    <a class=""
+                       href="/about"
+                    >
+                        关于
+                    </a>
+                </li>
+            
+        </ul>
+
+        <div class="menu-bar">
+            <div class="menu-bar-middle"></div>
+        </div>
+    </div>
+
+    <div class="header-drawer">
+        <ul class="drawer-menu-list">
+            
+                <li class="drawer-menu-item">
+                    <a class=""
+                       href="/">首页</a>
+                </li>
+            
+                <li class="drawer-menu-item">
+                    <a class=""
+                       href="/archives">归档</a>
+                </li>
+            
+                <li class="drawer-menu-item">
+                    <a class=""
+                       href="/about">关于</a>
+                </li>
+            
+        </ul>
+    </div>
+
+    <div class="window-mask"></div>
+
+</header>
+
+
+    </div>
+
+    <div class="page-middle ">
+
+        <main class="main-content normal-code-theme">
+
+            <div class="main-content-left">
+                
+                    <div class="fade-in-down-animation">
+    <div class="article-content-container">
+
+        <div class="article-title">
+            <h3><a class="title-hover-animation">canvas合成图片的踩坑之旅</a></h3>
+        </div>
+
+        <div class="meta-info">
+            <div class="article-meta-info">
+    <span class="article-date article-meta-item">
+        <i class="fa fa-calendar-o"></i> 2020-04-26 16:00:00
+    </span>
+    
+        <span class="article-categories article-meta-item">
+            <i class="fa fa-folder"></i>
+            <ul>
+                
+                    <li>
+                        <a href="/categories/FrontEnd/">FrontEnd</a>
+                    </li>
+                
+            </ul>
+        </span>
+    
+    
+        <span class="article-tags article-meta-item">
+            <i class="fa fa-tags"></i>
+            <ul>
+                
+                    <li>
+                        <a href="/tags/html2canvas/">html2canvas</a>
+                    </li>
+                
+                    <li>
+                        | <a href="/tags/canvas/">canvas</a>
+                    </li>
+                
+                    <li>
+                        | <a href="/tags/js/">js</a>
+                    </li>
+                
+                    <li>
+                        | <a href="/tags/blob/">blob</a>
+                    </li>
+                
+            </ul>
+        </span>
+    
+    
+        <span class="article-pv article-meta-item">
+            <i class="fa fa-eye"></i> <span id="busuanzi_value_page_pv"></span>
+        </span>
+    
+    
+    
+</div>
+
+        </div>
+
+        <div class="article-content markdown-body">
+            <h2 id="需求"><a href="#需求" class="headerlink" title="需求"></a>需求</h2><p>需求效果： 获取数据，渲染到页面的指定位置上，并且支持将该区域的图片高清保存。</p>
+<p>需求细节：</p>
+<ol>
+<li>图片局部元素有灰色滤镜的状态。</li>
+<li>图片根据不同分类 id 动态获取，尺寸不一。</li>
+<li>页面展示区域固定，等比例缩放，输出图片为高清图。</li>
+</ol>
+<h2 id="html2canvas"><a href="#html2canvas" class="headerlink" title="html2canvas"></a>html2canvas</h2><p>经过调研，不再重复造轮子，确定采用 html2canvas 库去实现。</p>
+<h3 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h3><h4 id="1-foreignObject-到-canvas-模式"><a href="#1-foreignObject-到-canvas-模式" class="headerlink" title="1. foreignObject 到 canvas 模式"></a>1. foreignObject 到 canvas 模式</h4><blockquote>
+<p>对应 html2canvas 的<code>foreignObjectRendering</code>选项</p>
+</blockquote>
+<ol>
+<li><p>把要截图的 dom 克隆一份，过程中把 getComputedStyle 附上 style</p>
+</li>
+<li><p>放到 svg 的 foreignObject 中</p>
+</li>
+<li><p>把 svg 序列化成 img 的 src（SVG 直接内联）：</p>
+</li>
+</ol>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">img.src = <span class="string">"data:image/svg+xml;charset=utf-8,"</span> + <span class="built_in">encodeURIComponent</span>(<span class="keyword">new</span> XMLSerializer().serializeToString(svg));</span><br></pre></td></tr></table></figure>
+
+<ol start="4">
+<li>ctx.drawImage(img, ….)</li>
+</ol>
+<a id="more"></a>
+
+<h4 id="纯-canvas-模式"><a href="#纯-canvas-模式" class="headerlink" title="纯 canvas 模式"></a>纯 canvas 模式</h4><figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1.</span>把要截图的dom克隆一份，过程中把getComputedStyle附上style</span><br><span class="line"></span><br><span class="line"><span class="number">2.</span>把克隆的dom转成类似VirtualDom的对象</span><br><span class="line"></span><br><span class="line"><span class="number">3.</span>递归这个对象，根据父子关系、层叠关系来计算出一个renderQueue</span><br><span class="line"></span><br><span class="line"><span class="number">4.</span>每个renderQueue Item都是一个虚拟dom对象，根据之前getComputedStyle得到的style信息，调用ctx的各种方法</span><br></pre></td></tr></table></figure>
+
+<p>粗略查看了<code>html2canvas</code>的文档，<code>foreignObjectRendering</code>属性默认为<code>false</code>,对于 <code>foreignObject</code> 这种实现方法，隐约感觉是有坑的, 这里先不做过多调研，抓紧时间上需求。</p>
+<h2 id="坑-1：图片跨域问题"><a href="#坑-1：图片跨域问题" class="headerlink" title="坑 1：图片跨域问题"></a>坑 1：图片跨域问题</h2><p>很快，笔者就遇到一个大家经常碰到的问题，对,就是跨域图片问题。报错类似下图</p>
+<p><img src="/images/2020-04-27-20-48-20.png" alt=""></p>
+<p>如果是 canvas.toDataURL()方法，则会报</p>
+<blockquote>
+<p>Failed to execute ‘toDataURL’ on 　’HTMLCanvasElement’: Tainted canvased may not be exported</p>
+</blockquote>
+<h3 id="为什么报错"><a href="#为什么报错" class="headerlink" title="为什么报错"></a>为什么报错</h3><p>这种错误 很容易让笔者联想到 cors，查阅文档</p>
+<blockquote>
+<p>尽管不通过 CORS 就可以在 <code>&lt;canvas&gt;</code> 中使用其他来源的图片，但是这会污染画布，并且不再认为是安全的画布，这将可能在 <code>&lt;canvas&gt;</code> 检索数据过程中引发异常。</p>
+</blockquote>
+<blockquote>
+<p>被污染的画布在调用<code>getImageData()</code>,<code>toBlob()</code>,<code>toDataURL()</code>都会抛出安全错误。</p>
+</blockquote>
+<blockquote>
+<p>这种机制可以避免未经许可拉取远程网站信息而导致的用户隐私泄露。</p>
+</blockquote>
+<p>其实 CORS 规则在其他场景也很常见</p>
+<blockquote>
+<p>在 HTML5 中，一些 HTML 元素提供了对 CORS 的支持， 例如 <code>&lt;audio&gt;、&lt;img&gt;、&lt;link&gt;、&lt;script&gt; 和 &lt;video&gt;</code> 均有一个跨域属性 (crossOrigin property)，它允许你配置元素获取数据的 CORS 请求。</p>
+</blockquote>
+<p>例如常常用到的<code>&lt;script&gt;</code>标签，如果不遵从 CORS 规则，引入异源的脚本，一般只会捕捉到如<code>Script Error</code>的错误。</p>
+<p>同理，通过 JS 可以获取到图片的<code>EXIF</code>等敏感信息, CORS 规则确保了这些隐私数据不被利用。</p>
+<h3 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h3><ol>
+<li><p>img 标签的<code>crossorigin</code>属性为<code>anonymous</code></p>
+<p>这个属性相当于告诉服务器不携带<code>credential</code>如 cookie 等去请求</p>
+<blockquote>
+<p>这个枚举属性表明是否必须使用 CORS 完成相关图像的抓取。启用 CORS 的图像 可以在 <code>&lt;canvas&gt;</code>元素中重复使用，而不会被污染（tainted）。</p>
+</blockquote>
+<blockquote>
+<p>当用户并未显式使用本属性时，默认不使用 CORS 发起请求</p>
+</blockquote>
+<blockquote>
+<p>IE11+(IE Edge)，Safari，Chrome，Firefox 浏览器均支持，IE9 和 IE10 会报 SecurityError 安全错误</p>
+</blockquote>
+</li>
+<li><p>后端对 CORS 的图片跨域请求要做处理</p>
+<blockquote>
+<p>Access-Control-Allow-Origin “*“, 该配置为允许跨域访问图片。</p>
+</blockquote>
+</li>
+<li><p>html2canvas 打开<code>allowTaint</code>和<code>useCORS</code>属性, 以便告知插件需要开启该特性。</p>
+</li>
+</ol>
+<p>至此，我也以为这个坑就这样平躺过去了，然而，报错依旧，重新检查了一下前后端，确实都符合 cors 的规则，问题出在哪里呢？</p>
+<p>最后，stackoverflow 等等讨论区中找到了原因：浏览器使用缓存中的图片，导致 CORS 请求没有触发。<br>观察控制台，图片确实是<code>from memory cache</code>，所以解决方法如下：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;img src=&#123;url + <span class="string">`?t=<span class="subst">$&#123;<span class="built_in">Number</span>(<span class="keyword">new</span> <span class="built_in">Date</span>())&#125;</span>`</span>&#125; /&gt;</span><br></pre></td></tr></table></figure>
+
+<p>对于图片缓存了 CORS 导致问题的这个情况，没有比较官方的解释，社区有人表示 safari 没有这个问题，说是 Chrome 的问题，找了半天没有比较官方的解释，那么就过了吧~</p>
+<h2 id="坑-2：图片清晰度问题"><a href="#坑-2：图片清晰度问题" class="headerlink" title="坑 2：图片清晰度问题"></a>坑 2：图片清晰度问题</h2><p>简单查阅了文档，使用 html2canvas 的<code>scale</code>属性，其默认值是<code>window.devicePixelRatio</code>。</p>
+<p>需求中, 页面的大小为输出图的 0.7 倍</p>
+<p>需要注意的是,布局元素布局的时候要按照设计图的标注等比例放大响应倍数(<code>1 / 0.7 ≈ 1.4</code>)，再利用<code>transform: scale(0.7)</code>进行缩放，这样就能够保证输出原图时的清晰度。</p>
+<h2 id="坑-3：-CSS3-属性支持"><a href="#坑-3：-CSS3-属性支持" class="headerlink" title="坑 3： CSS3 属性支持"></a>坑 3： CSS3 属性支持</h2><h3 id="库的支持"><a href="#库的支持" class="headerlink" title="库的支持"></a>库的支持</h3><p>基于 html2canvas 中实现原理可知，<br>使用纯 canvas 方法，对于每个 css 属性 都必须 在 canvas 实现模拟，对于 css 这种语言，举个例子吧，就相当于实现了一趟 babel 吧，其中的工作量是可想而知的。</p>
+<p>所以，html2canvas 给出了一下不支持的属性如下</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">background-blend-mode</span><br><span class="line">border-image</span><br><span class="line">box-decoration-break</span><br><span class="line">box-shadow</span><br><span class="line">filter</span><br><span class="line">font-variant-ligatures</span><br><span class="line">mix-blend-mode</span><br><span class="line">object-fit</span><br><span class="line">repeating-linear-gradient()</span><br><span class="line">writing-mode</span><br><span class="line">zoom</span><br></pre></td></tr></table></figure>
+
+<h3 id="模拟-text-overflow-ellipsis"><a href="#模拟-text-overflow-ellipsis" class="headerlink" title="模拟 text-overflow: ellipsis"></a>模拟 text-overflow: ellipsis</h3><p>这个属性输出图片是有问题的, 只能够用 js 对字符串做处理了,这里常规要注意中英文的占位长度问题, 简单处理如下</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">textOverflow</span>(<span class="params">str = '', maxLen = 14</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">let</span> len = <span class="number">0</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; str.length; i++) &#123;</span><br><span class="line">    <span class="keyword">if</span> (str.charCodeAt(i) &gt; <span class="number">127</span> || str.charCodeAt(i) == <span class="number">94</span>) &#123;</span><br><span class="line">      len += <span class="number">2</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      len++</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (len &gt;= maxLen) &#123;</span><br><span class="line">      <span class="keyword">return</span> str.substr(<span class="number">0</span>, i + <span class="number">1</span>) + <span class="string">'...'</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> str</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="模拟-CSS3-filter-grayscale"><a href="#模拟-CSS3-filter-grayscale" class="headerlink" title="模拟 CSS3 filter: grayscale()"></a>模拟 CSS3 filter: grayscale()</h3><p>常规操作，还是到 issue 讨论区看看，果然半年前是有人提过 pr，至今还没有处理</p>
+<p>此时笔者内心还是晾了一把，逛了一圈，笔者用简单的 function 实现了，复杂度 O(xy), 原理是提取出 ImageData，操作 <code>ImageData.data</code> 属性，修改每个像素点的色值。</p>
+<blockquote>
+<p>只读的 ImageData.data 属性，返回 Uint8ClampedArray ，描述一个一维数组，包含以 RGBA 顺序的数据，数据使用 0 至 255（包含）的整数表示。</p>
+</blockquote>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> dataURLtoBlob <span class="keyword">from</span> <span class="string">'blueimp-canvas-to-blob'</span> <span class="comment">// 使用polyfill</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">grayImage</span>(<span class="params">imgObj: HTMLImageElement</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> canvas = <span class="built_in">document</span>.createElement(<span class="string">'canvas'</span>)</span><br><span class="line">  <span class="keyword">const</span> canvasContext = canvas.getContext(<span class="string">'2d'</span>)</span><br><span class="line"></span><br><span class="line">  <span class="keyword">const</span> imgW = imgObj.naturalWidth <span class="comment">// 这里使用naturalWidth/Height属性，保持原图的清晰度</span></span><br><span class="line">  <span class="keyword">const</span> imgH = imgObj.naturalHeight</span><br><span class="line">  canvas.width = imgW</span><br><span class="line">  canvas.height = imgH</span><br><span class="line">  <span class="keyword">if</span> (!canvasContext) <span class="keyword">return</span></span><br><span class="line">  canvasContext.drawImage(imgObj, <span class="number">0</span>, <span class="number">0</span>)</span><br><span class="line">  <span class="keyword">const</span> imgPixels = canvasContext.getImageData(<span class="number">0</span>, <span class="number">0</span>, imgW, imgH)</span><br><span class="line"></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">let</span> y = <span class="number">0</span>; y &lt; imgPixels.height; y++) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">let</span> x = <span class="number">0</span>; x &lt; imgPixels.width; x++) &#123;</span><br><span class="line">      <span class="keyword">const</span> i = y * <span class="number">4</span> * imgPixels.width + x * <span class="number">4</span></span><br><span class="line">      <span class="keyword">const</span> avg =</span><br><span class="line">        (imgPixels.data[i] + imgPixels.data[i + <span class="number">1</span>] + imgPixels.data[i + <span class="number">2</span>]) / <span class="number">3</span></span><br><span class="line">      imgPixels.data[i] = avg</span><br><span class="line">      imgPixels.data[i + <span class="number">1</span>] = avg</span><br><span class="line">      imgPixels.data[i + <span class="number">2</span>] = avg</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  canvasContext.putImageData(</span><br><span class="line">    imgPixels,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    <span class="number">0</span>,</span><br><span class="line">    imgPixels.width,</span><br><span class="line">    imgPixels.height</span><br><span class="line">  )</span><br><span class="line">  <span class="comment">// base64 =&gt; blob =&gt; blobUrl</span></span><br><span class="line">  <span class="keyword">const</span> base64 = canvas.toDataURL()</span><br><span class="line">  <span class="keyword">const</span> blobUrl = URL.createObjectURL(dataURLtoBlob(base64))</span><br><span class="line">  <span class="keyword">return</span> blobUrl</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>注意，canvas.toBlob 在一些浏览器上的兼容性是不太好的，查阅如下：</p>
+<p><img src="/images/2020-04-27-20-42-46.png" alt=""></p>
+<p>然而，我是怎么知道的呢？ 因为笔者刚好是基于 Chorme49 内核的 webview 下开发，浏览器抛出了异常，看了下 chrome 的支持，也是刚好栽在了 49 版本之下，卒~</p>
+<p>那么 用 base64 可以吗？ 我觉得是不行的，因为众所周知 base64 的长度体积是很大的，往往比原图要大，不仅如此，base64 生成后是直接更新到虚拟 dom 和真实 dom 的，整个过程造成了性能浪费，而且 base64 过大就会造成了文档体积过大，显然这个方案是不合理的。</p>
+<p>幸好，我们可以简单引入一下 polyfill 解决该问题, 如下</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> dataURLtoBlob <span class="keyword">from</span> <span class="string">'blueimp-canvas-to-blob'</span> <span class="comment">// 使用polyfill</span></span><br><span class="line"><span class="comment">// base64 =&gt; blob =&gt; blobUrl</span></span><br><span class="line"><span class="keyword">const</span> base64 = canvas.toDataURL()</span><br><span class="line"><span class="keyword">const</span> blobUrl = URL.createObjectURL(dataURLtoBlob(base64))</span><br></pre></td></tr></table></figure>
+
+<p>通过<code>dataURLtoBlob</code>的 polyfill，这步是会有一些耗时，但实测下来性能没有问题，至此，又安全地过了这个坑~</p>
+<h2 id="坑-4：内存问题"><a href="#坑-4：内存问题" class="headerlink" title="坑 4：内存问题"></a>坑 4：内存问题</h2><p>接着上面，我们发现使用过程中，在不断地打开带有灰度图片的页面中, 发现了莫名的卡顿问题.</p>
+<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>初步猜测是内存泄漏的问题，使用 <code>菜单 =&gt; 更多工具 =&gt; 任务管理</code>，观察内存占用<br><img src="/images/2020-04-28-15-00-57.png" alt=""></p>
+<p>笔者发现，只要触发一次上面提到的模拟灰度处理<code>grayImage()</code>,内存就上涨 2MB 左右，由此可见，处理后的图片占用内存并没有被回收或者释放。</p>
+<h3 id="定位问题"><a href="#定位问题" class="headerlink" title="定位问题"></a>定位问题</h3><p>回顾一下<code>grayImage</code>的逻辑，看上去是一个纯函数，这时候我们通过经验，可以观察到一些可能存在副作用的代码，例如<code>URL.createObjectURL</code></p>
+<p>查看 MDN 文档, 果然，官方给予了明确的提示：</p>
+<blockquote>
+<p>在每次调用 <code>createObjectURL()</code> 方法时，都会创建一个新的 URL 对象，即使你已经用相同的对象作为参数创建过。当不再需要这些 URL 对象时，每个对象必须通过调用 <code>URL.revokeObjectURL()</code> 方法来释放。</p>
+</blockquote>
+<blockquote>
+<p>浏览器在 document 卸载的时候，会自动释放它们，但是为了获得最佳性能和内存使用状况，你应该在安全的时机主动释放掉它们。</p>
+</blockquote>
+<p>为了便于逻辑的复用，笔者简单地封装了一下<code>&lt;img /&gt;</code>作为 ImgContainer 组件 ，在组件中，加上卸载组件的逻辑, 问题得以解决。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">useEffect(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    blobUrlQueue.forEach(<span class="function">(<span class="params">url</span>) =&gt;</span> &#123;</span><br><span class="line">      URL.revokeObjectURL(url)</span><br><span class="line">    &#125;)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;, [])</span><br></pre></td></tr></table></figure>
+
+<h2 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h2><p>以上，由于开发时间紧迫，一些问题没有继续深入地分析，仅仅是以笔记的形式做记录，如有错误或者其他意见，欢迎讨论和指正。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li>ImageData: <a href="https://developer.mozilla.org/zh-CN/docs/Web/API/ImageData" target="_blank" rel="noopener">https://developer.mozilla.org/zh-CN/docs/Web/API/ImageData</a></li>
+<li>html2canvas: <a href="https://html2canvas.hertzen.com/features" target="_blank" rel="noopener">https://html2canvas.hertzen.com/features</a></li>
+<li>启用了 CORS 的图片: <a href="https://developer.mozilla.org/zh-CN/docs/Web/HTML/CORS_enabled_image" target="_blank" rel="noopener">https://developer.mozilla.org/zh-CN/docs/Web/HTML/CORS_enabled_image</a></li>
+<li>CORS settings attributes: <a href="https://developer.mozilla.org/zh-CN/docs/Web/HTML/CORS_settings_attributes" target="_blank" rel="noopener">https://developer.mozilla.org/zh-CN/docs/Web/HTML/CORS_settings_attributes</a></li>
+<li>URL.createObjectURL(): <a href="https://developer.mozilla.org/zh-CN/docs/Web/API/URL/createObjectURL" target="_blank" rel="noopener">https://developer.mozilla.org/zh-CN/docs/Web/API/URL/createObjectURL</a></li>
+</ul>
+
+        </div>
+
+        <div class="article-nav">
+            
+                <div class="article-prev">
+                    <a class="prev btn"
+                       rel="prev"
+                       href="/2020/05/04/%E6%8A%80%E6%9C%AF%E7%AC%94%E8%AE%B0-2020-05-05-%E5%BE%AE%E5%89%8D%E7%AB%AF%E7%A7%AF%E6%9C%A8%E7%B3%BB%E7%BB%9F-%E5%8E%9F%E7%90%86%E7%AF%87/"
+                    >
+                        <i class="fa fa-chevron-left"></i> <span class="post-nav-title-item">微前端积木系统 - 原理篇</span><span class="post-nav-item">上一篇</span>
+                    </a>
+                </div>
+            
+            
+                <div class="article-next">
+                    <a class="next btn"
+                       rel="next"
+                       href="/2019/11/25/%E6%8A%80%E6%9C%AF%E7%AC%94%E8%AE%B0-2019-11-25-TS%E6%B3%9B%E5%9E%8B%E7%9A%84%E4%B8%80%E4%BA%9B%E5%BA%94%E7%94%A8/"
+                    >
+                        <span class="post-nav-title-item">TS泛型的一些应用</span><span class="post-nav-item">下一篇</span> <i class="fa fa-chevron-right"></i>
+                    </a>
+                </div>
+            
+        </div>
+
+        <div class="comment-container">
+            <div class="comments-container">
+    
+        
+    <div class="valine-container">
+        <script src='//unpkg.com/valine/dist/Valine.min.js'></script>
+        <div id="vcomments"></div>
+        <script>
+            new Valine({
+                el: '#vcomments',
+                appId: 'kVxWaAfKn5NxtpFdjinYGDW3-9Nh9j0Va',
+                appKey: 'yyChy8iJ6WEFFmLDrl2UApvQ',
+                meta: 'nick,mail,link'.split(','),
+                avatar: 'wavatar',
+                enableQQ: true,
+                placeholder: '欢迎留言',
+                lang: 'zh-CN'.toLowerCase()
+            });
+
+
+            // Valine 评论列表增加"作者"标识
+            const getValineDomTimer = setInterval(() => {
+                const vcards = document.querySelectorAll('#vcomments .vcards .vcard');
+                if (vcards.length > 0) {
+                    for (let vcard of vcards) {
+                        const vnick = vcard.querySelector('.vhead .vnick');
+                        if (vnick.innerHTML.toLocaleLowerCase() === 'Ron0115'.toLocaleLowerCase()) {
+                            vcard.classList.add('author');
+                        }
+                    }
+                    clearInterval(getValineDomTimer);
+                } else {
+                    clearInterval(getValineDomTimer);
+                }
+            }, 2000);
+        </script>
+    </div>
+
+
+    
+</div>
+        </div>
+    </div>
+</div>
+
+    <div class="article-toc-container fade-in-down-animation">
+        <div class="article-toc">
+            <div class="post-toc-wrap">
+    <div class="post-toc">
+        <ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#需求"><span class="nav-number">1.</span> <span class="nav-text">需求</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#html2canvas"><span class="nav-number">2.</span> <span class="nav-text">html2canvas</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#原理"><span class="nav-number">2.1.</span> <span class="nav-text">原理</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-foreignObject-到-canvas-模式"><span class="nav-number">2.1.1.</span> <span class="nav-text">1. foreignObject 到 canvas 模式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#纯-canvas-模式"><span class="nav-number">2.1.2.</span> <span class="nav-text">纯 canvas 模式</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#坑-1：图片跨域问题"><span class="nav-number">3.</span> <span class="nav-text">坑 1：图片跨域问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#为什么报错"><span class="nav-number">3.1.</span> <span class="nav-text">为什么报错</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#解决方法"><span class="nav-number">3.2.</span> <span class="nav-text">解决方法</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#坑-2：图片清晰度问题"><span class="nav-number">4.</span> <span class="nav-text">坑 2：图片清晰度问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#坑-3：-CSS3-属性支持"><span class="nav-number">5.</span> <span class="nav-text">坑 3： CSS3 属性支持</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#库的支持"><span class="nav-number">5.1.</span> <span class="nav-text">库的支持</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#模拟-text-overflow-ellipsis"><span class="nav-number">5.2.</span> <span class="nav-text">模拟 text-overflow: ellipsis</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#模拟-CSS3-filter-grayscale"><span class="nav-number">5.3.</span> <span class="nav-text">模拟 CSS3 filter: grayscale()</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#坑-4：内存问题"><span class="nav-number">6.</span> <span class="nav-text">坑 4：内存问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#分析"><span class="nav-number">6.1.</span> <span class="nav-text">分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#定位问题"><span class="nav-number">6.2.</span> <span class="nav-text">定位问题</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#最后"><span class="nav-number">7.</span> <span class="nav-text">最后</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">8.</span> <span class="nav-text">参考</span></a></li></ol>
+    </div>
+</div>
+        </div>
+    </div>
+
+
+                
+
+            </div>
+
+            
+
+        </main>
+
+        <div class="sidebar-tools">
+            <div class="tools-container">
+    <ul class="tools-list">
+        
+            <li class="search popup-trigger">
+                <i class="fa fa-search"></i>
+            </li>
+            
+<script src="/js/local-search.js"></script>
+
+        
+        <li class="mode-toggle">
+            <i class="fa fa-moon-o"></i>
+        </li>
+        
+    </ul>
+</div>
+
+        </div>
+
+        
+            <div class="scroll-to-top">
+                <ul>
+                    <li>
+                        <!--<i class="fa fa-caret-up"></i>-->
+                        <span class="scroll-percent"></span>
+                    </li>
+                </ul>
+            </div>
+        
+    </div>
+
+    <div class="page-bottom">
+        <footer class="footer">
+    <div class="info-container">
+        <div class="copyright-info info-item">
+            &copy; 2021 <i class="fa fa-heart-o"></i> <a href="/">Ron0115</a>
+        </div>
+        <div class="theme-info info-item">
+            由 <a target="_blank" href="https://hexo.io">Hexo</a> 驱动 | 主题 <a
+                    href="https://github.com/XPoet/hexo-theme-ils" target="_blank">ILS v1.2.0</a>
+        </div>
+        
+            <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+            <div class="website-count info-item">
+                
+                    <span id="busuanzi_container_site_uv" style="display: none">
+                        访问人数 <span id="busuanzi_value_site_uv"></span>
+                    </span>
+                
+                
+                    <span id="busuanzi_container_site_pv" style="display: none">
+                        总访问量 <span id="busuanzi_value_site_pv"></span>
+                    </span>
+                
+            </div>
+        
+    </div>
+</footer>
+
+    </div>
+</div>
+
+    <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+          <span class="search-icon">
+            <i class="fa fa-search"></i>
+          </span>
+            <div class="search-input-container">
+                <input autocomplete="off"
+                       autocorrect="off"
+                       autocapitalize="off"
+                       placeholder="搜索..."
+                       spellcheck="false"
+                       type="search"
+                       class="search-input"
+                >
+            </div>
+            <span class="popup-btn-close">
+                <i class="fa fa-times"></i>
+            </span>
+        </div>
+        <div id="search-result">
+            <div id="no-result">
+                <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<script src="/js/main.js"></script>
+<script src="/js/header-shrink.js"></script>
+<script src="/js/toggle-mode.js"></script>
+
+
+
+    
+<script src="/js/scroll-to-top.js"></script>
+
+
+
+
+
+    
+        
+<script src="/js/code-copy.js"></script>
+
+    
+
+    
+        
+<script src="/lib/anime.min.js"></script>
+<script src="/js/toc.js"></script>
+
+    
+
+
+
+
+</body>
+</html>
